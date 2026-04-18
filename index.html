@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basilmol DS Forecasting — ISPE 2026 Roche Track</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f8f6;color:#1a1a18;min-height:100vh}
+#app{max-width:680px;margin:0 auto;background:#fff;min-height:100vh;padding:0 15px 40px}
+.hdr{border-bottom:1px solid #e5e4de;padding:14px 0 12px}
+.hdr-pill{display:inline-block;font-size:10px;font-weight:700;background:#e6f1fb;color:#185fa5;padding:3px 8px;border-radius:4px;margin-bottom:6px;letter-spacing:.05em}
+.hdr h1{font-size:16px;font-weight:700;color:#1a1a18;margin-bottom:2px;line-height:1.3}
+.hdr p{font-size:11px;color:#73726c}
+.tabs{display:flex;overflow-x:auto;border-bottom:1px solid #e5e4de;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;font-size:12px;padding:9px 12px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:#73726c;font-family:inherit;white-space:nowrap;transition:all .15s}
+.tab.active{color:#1a1a18;border-bottom-color:#1a1a18;font-weight:700}
+.tab:hover:not(.active){color:#1a1a18;background:#f1efe8}
+.panel{display:none;padding:18px 0 8px}
+.panel.active{display:block}
+.sec-label{font-size:10px;font-weight:700;color:#73726c;letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px}
+/* === CARDS === */
+.card{background:#f8f8f6;border:1px solid #e5e4de;border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.card-danger{background:#fcebeb;border-color:#f7c1c1}
+.card-success{background:#eaf3de;border-color:#c0dd97}
+.card-info{background:#e6f1fb;border-color:#b5d4f4}
+.card-warn{background:#faeeda;border-color:#fac775}
+.card-purple{background:#eeedfe;border-color:#afa9ec}
+/* === STATS === */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}
+.stat-card{background:#f1efe8;border-radius:8px;padding:9px 8px;text-align:center}
+.stat-num{font-size:20px;font-weight:700}
+.stat-lbl{font-size:10px;color:#73726c;margin-top:2px}
+.danger{color:#a32d2d} .success{color:#3b6d11} .info{color:#185fa5} .warn{color:#854f0b} .purple{color:#534ab7}
+/* === FLOW === */
+.flow-row{display:flex;align-items:center;gap:0;overflow-x:auto;margin:12px 0;padding-bottom:4px}
+.flow-box{flex:0 0 72px;border:1px solid #d3d1c7;border-radius:8px;padding:8px 5px;text-align:center}
+.flow-icon{font-size:18px;display:block;margin-bottom:3px}
+.flow-title{font-size:10px;font-weight:700;color:#1a1a18}
+.flow-sub{font-size:9px;color:#73726c;margin-top:1px}
+.flow-arrow{padding:0 5px;color:#b4b2a9;font-size:13px;flex-shrink:0}
+/* === DEMO NODES === */
+.demo-nodes{display:flex;align-items:stretch;gap:0;margin:12px 0;min-height:110px}
+.dnode{flex:1;border:1px solid #d3d1c7;border-radius:8px;padding:9px 7px;transition:all .35s;position:relative}
+.dnode.active{border-color:#378add;background:#e6f1fb}
+.dnode.done{border-color:#3b6d11;background:#eaf3de}
+.dnode-icon{font-size:19px;margin-bottom:4px;display:block}
+.dnode-title{font-size:10px;font-weight:700;color:#1a1a18;margin-bottom:2px}
+.dnode-sub{font-size:9px;color:#73726c;line-height:1.4}
+.dnode-status{position:absolute;top:5px;right:5px;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700}
+.ds-idle{background:#f1efe8;color:#73726c}
+.ds-active{background:#e6f1fb;color:#185fa5}
+.ds-done{background:#eaf3de;color:#3b6d11}
+.conn-line{display:flex;align-items:center;justify-content:center;width:22px;flex-shrink:0;position:relative}
+.conn-track{width:100%;height:2px;background:#e5e4de;border-radius:1px;position:relative;overflow:hidden}
+.conn-pkt{position:absolute;top:-3px;left:-10px;width:10px;height:8px;border-radius:2px;background:#378add;opacity:0}
+.conn-pkt.animate{animation:pkt .9s ease-in-out forwards}
+.conn-pkt.animate-rev{animation:pkt-rev .9s ease-in-out forwards}
+@keyframes pkt{0%{left:-10px;opacity:1}100%{left:calc(100% + 4px);opacity:0}}
+@keyframes pkt-rev{0%{right:-10px;left:auto;opacity:1}100%{right:calc(100% + 4px);left:auto;opacity:0}}
+.conn-arw{position:absolute;right:-1px;top:50%;transform:translateY(-50%);color:#b4b2a9;font-size:9px}
+/* === DCC PANEL === */
+.dcc-panel{border:1px solid #d3d1c7;border-radius:10px;overflow:hidden;margin:12px 0}
+.dcc-hdr{background:#f1efe8;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e4de;flex-wrap:wrap;gap:4px}
+.dcc-hdr-title{font-size:11px;font-weight:700;color:#1a1a18}
+.dcc-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px}
+.dcc-badge.pending{background:#e6f1fb;color:#185fa5}
+.dcc-badge.done{background:#eaf3de;color:#3b6d11}
+.dcc-field{display:flex;align-items:center;padding:6px 12px;border-bottom:1px solid #f1efe8;transition:background .35s}
+.dcc-field:last-child{border-bottom:none}
+.dcc-field.populated{background:#eaf3de}
+.dcc-key{font-size:10px;color:#73726c;width:130px;flex-shrink:0}
+.dcc-val{font-size:10px;font-family:'SF Mono',Consolas,monospace;color:#1a1a18}
+.dcc-val.empty{color:#b4b2a9}
+.dcc-val.pass{color:#3b6d11;font-weight:700}
+/* === BUTTONS === */
+.btn-row{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+button.primary{background:#1a1a18;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+button.primary:hover{opacity:.85} button.primary:disabled{opacity:.4;cursor:not-allowed}
+button.sec{background:none;border:1px solid #d3d1c7;border-radius:8px;padding:9px 12px;font-size:12px;cursor:pointer;color:#73726c;font-family:inherit}
+button.sec:hover{background:#f1efe8;color:#1a1a18}
+button.pill{background:#f1efe8;border:1px solid #d3d1c7;border-radius:20px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;color:#5f5e5a;transition:all .15s}
+button.pill.active{background:#1a1a18;border-color:#1a1a18;color:#fff;font-weight:700}
+/* === PROGRESS / LOG === */
+.progress-bar{height:4px;background:#e5e4de;border-radius:2px;margin:10px 0;overflow:hidden}
+.progress-fill{height:100%;background:#378add;border-radius:2px;transition:width .5s ease;width:0%}
+.progress-fill.done{background:#639922}
+.step-log{border:1px solid #e5e4de;border-radius:8px;font-size:10px;font-family:'SF Mono',Consolas,monospace;background:#f8f8f6;max-height:84px;overflow-y:auto;padding:7px 10px}
+.log-line{padding:1px 0;color:#73726c}
+.log-line.info{color:#185fa5} .log-line.success{color:#3b6d11} .log-line.warn{color:#854f0b}
+.success-banner{background:#eaf3de;border:1px solid #c0dd97;border-radius:8px;padding:9px 12px;font-size:12px;color:#3b6d11;font-weight:700;display:none;margin-bottom:10px}
+/* === CHART === */
+#chart-container{border:1px solid #e5e4de;border-radius:10px;overflow:hidden;margin:12px 0}
+#chart-header{background:#f1efe8;padding:8px 12px;border-bottom:1px solid #e5e4de;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+#chart-header h3{font-size:12px;font-weight:700}
+.chart-legend{display:flex;gap:10px;font-size:10px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:4px}
+.leg-dot{width:10px;height:3px;border-radius:2px}
+#chart-wrap{padding:8px 4px 4px;background:#fff}
+#chart-wrap svg{display:block;width:100%;overflow:visible}
+.chart-toggles{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid #f1efe8}
+.chart-alert{background:#faeeda;border:1px solid #fac775;border-radius:8px;padding:8px 12px;margin:8px 12px 10px;font-size:11px;color:#854f0b}
+.chart-alert strong{font-weight:700;display:block;margin-bottom:2px}
+/* === IAM === */
+.role-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.role-btn{border:1px solid #d3d1c7;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;background:#f8f8f6;font-family:inherit;transition:all .15s;text-align:left}
+.role-btn .rb-name{font-weight:700;display:block;font-size:11px;color:#1a1a18}
+.role-btn .rb-org{font-size:9px;color:#73726c}
+.role-btn.active.rosemary{border-color:#534ab7;background:#eeedfe}
+.role-btn.active.roche{border-color:#185fa5;background:#e6f1fb}
+.role-btn.active.admin{border-color:#854f0b;background:#faeeda}
+.perm-table{border:1px solid #e5e4de;border-radius:10px;overflow:hidden;font-size:10px;margin:10px 0;width:100%;border-collapse:collapse}
+.perm-table th{background:#f1efe8;padding:6px 8px;font-size:9px;font-weight:700;text-align:left;border-bottom:1px solid #e5e4de;color:#5f5e5a;letter-spacing:.04em}
+.perm-table td{padding:6px 8px;border-bottom:1px solid #f1efe8;color:#1a1a18}
+.perm-table tr:last-child td{border-bottom:none}
+.perm-table tr.highlighted td{background:#e6f1fb}
+.perm-table tr.highlighted td:first-child{font-weight:700}
+.perm-badge{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;white-space:nowrap;display:inline-block}
+.pb-write{background:#eaf3de;color:#3b6d11}
+.pb-read{background:#e6f1fb;color:#185fa5}
+.pb-approve{background:#eeedfe;color:#534ab7}
+.pb-none{background:#f1efe8;color:#b4b2a9}
+.pb-admin{background:#faeeda;color:#854f0b}
+.sec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.sec-card{border:1px solid #e5e4de;border-radius:8px;padding:10px 10px}
+.sec-icon{font-size:20px;margin-bottom:5px;display:block}
+.sec-title{font-size:11px;font-weight:700;color:#1a1a18;margin-bottom:4px}
+.sec-desc{font-size:10px;color:#73726c;line-height:1.5}
+/* === TRACEABILITY === */
+.trace-step{display:flex;gap:10px;margin-bottom:0;position:relative}
+.trace-left{display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0}
+.trace-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;margin-top:3px}
+.trace-line{flex:1;width:2px;background:#e5e4de;margin:2px 0}
+.trace-content{flex:1;padding-bottom:16px}
+.trace-title{font-size:12px;font-weight:700;color:#1a1a18;margin-bottom:3px}
+.trace-sub{font-size:10px;color:#73726c;margin-bottom:5px;line-height:1.5}
+.trace-tags{display:flex;gap:4px;flex-wrap:wrap}
+.trace-tag{font-size:9px;font-weight:600;background:#f1efe8;color:#5f5e5a;padding:2px 6px;border-radius:3px}
+.trace-tag.who{background:#eeedfe;color:#534ab7}
+.trace-tag.gmp{background:#e6f1fb;color:#185fa5}
+.trace-tag.aas{background:#eaf3de;color:#3b6d11}
+/* === ALCOA === */
+.alcoa-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:6px}
+.alcoa-card{border:1px solid #c0dd97;background:#eaf3de;border-radius:8px;padding:9px 10px}
+.alcoa-letter{font-size:15px;font-weight:700;color:#3b6d11;margin-bottom:1px}
+.alcoa-principle{font-size:11px;font-weight:700;color:#1a1a18;margin-bottom:3px}
+.alcoa-how{font-size:10px;color:#444441;line-height:1.5}
+/* === ADAPTIVE === */
+.persona-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.persona-btn{border:1px solid #d3d1c7;border-radius:8px;padding:7px 10px;font-size:11px;cursor:pointer;background:#f8f8f6;font-family:inherit;transition:all .15s}
+.persona-btn .pb-role{font-weight:700;display:block;font-size:12px;color:#1a1a18;margin-bottom:1px}
+.persona-btn .pb-desc{font-size:9px;color:#73726c}
+.persona-btn.active{background:#1a1a18;border-color:#1a1a18}
+.persona-btn.active .pb-role,.persona-btn.active .pb-desc{color:#fff}
+.persona-panel{display:none} .persona-panel.active{display:block}
+.metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.metric-card{background:#f1efe8;border-radius:8px;padding:10px 12px}
+.metric-val{font-size:22px;font-weight:700;margin-bottom:2px}
+.metric-lbl{font-size:10px;color:#73726c}
+.insight-row{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f1efe8}
+.insight-row:last-child{border-bottom:none}
+.insight-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.insight-text{font-size:12px;color:#1a1a18;line-height:1.5}
+.insight-text strong{font-weight:700}
+.time-cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.time-box{border-radius:8px;padding:10px;text-align:center;border:1px solid #e5e4de}
+.time-box.before{background:#fcebeb;border-color:#f7c1c1}
+.time-box.after{background:#eaf3de;border-color:#c0dd97}
+.time-val{font-size:18px;font-weight:700;margin-bottom:2px}
+.time-lbl{font-size:10px;color:#73726c}
+/* Responsive */
+@media(max-width:380px){.metric-grid{grid-template-columns:1fr}.sec-grid{grid-template-columns:1fr}.alcoa-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="hdr">
+  <div class="hdr-pill">ISPE 2026 Emerging Leader Hackathon. Roche Track</div>
+  <h1>Roche x Rosemary Solutions | Joint Asset Administration Shell (JAAS)</h1>
+  <p>Interactive Demo</p>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('problem')">Tool Overview</button>
+  <button class="tab" onclick="switchTab('demo')">Batch Overview</button>
+  <button class="tab" onclick="switchTab('forecast')">Forecast</button>
+  <button class="tab" onclick="switchTab('iam')">IAM &amp; Security</button>
+  <button class="tab" onclick="switchTab('trace')">Traceability</button>
+  <button class="tab" onclick="switchTab('adapt')">Who's This For</button>
+  <button class="tab" onclick="switchTab('qa')">QA Review</button>
+</div>
+
+<!-- ============ TAB 1: PROBLEM ============ -->
+<div id="tab-problem" class="panel active">
+  <div class="sec-label">The supply chain today — Rosemary → Roche Kaiseraugst</div>
+  <div class="flow-row">
+    <div class="flow-box"><span class="flow-icon">🏭</span><div class="flow-title">Rosemary</div><div class="flow-sub">CDMO mfg</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box"><span class="flow-icon">📄</span><div class="flow-title">PDF CoA</div><div class="flow-sub">Batch release</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box"><span class="flow-icon">📊</span><div class="flow-title">Excel</div><div class="flow-sub">DS forecast</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box"><span class="flow-icon">⌨️</span><div class="flow-title">Manual QMS</div><div class="flow-sub">Re-entry</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box"><span class="flow-icon">🏥</span><div class="flow-title">Kaiseraugst</div><div class="flow-sub">DP production</div></div>
+  </div>
+  <!-- KAU demand planning feedback loop — manual, broken -->
+  <div style="border:1px dashed #f7c1c1;border-radius:8px;padding:8px 10px;margin-bottom:10px;background:#fff8f8;display:flex;align-items:center;gap:8px">
+    <span style="font-size:15px">🔁</span>
+    <div style="flex:1">
+      <div style="font-size:10px;font-weight:700;color:#a32d2d;margin-bottom:2px">KAU Demand Planning feedback loop — broken</div>
+      <div style="font-size:10px;color:#73726c;line-height:1.5">Kaiseraugst Supply Chain planner manually compiles DP line consumption data → sends monthly demand update email → Rosemary adapts production plan. <span style="color:#a32d2d;font-weight:600">1–2 week lag. No version control. No audit trail.</span></div>
+    </div>
+    <div style="text-align:center;flex-shrink:0">
+      <div style="font-size:16px">📧</div>
+      <div style="font-size:8px;color:#a32d2d;font-weight:700">Email only</div>
+    </div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-num danger">4–6w</div><div class="stat-lbl">Batch data cycle</div></div>
+    <div class="stat-card"><div class="stat-num danger">±18%</div><div class="stat-lbl">Forecast error rate</div></div>
+    <div class="stat-card"><div class="stat-num danger">3–5</div><div class="stat-lbl">Manual handoffs</div></div>
+  </div>
+  <div class="card card-danger">
+    <div style="font-size:12px;font-weight:700;color:#a32d2d;margin-bottom:5px">Three critical failure points</div>
+    <div class="insight-row" style="border-bottom:1px solid #f7c1c1"><span class="insight-icon">📄</span><div class="insight-text"><strong>Batch CoA as PDF:</strong> Rosemary issues batch release data as PDF. Roche QA manually reads, compares, and re-enters into QMS — data integrity risk at every keystroke.</div></div>
+    <div class="insight-row" style="border-bottom:1px solid #f7c1c1"><span class="insight-icon">📊</span><div class="insight-text"><strong>Forecast via Excel email:</strong> Kaiseraugst sends DS demand forecast via email. Rosemary plans production based on stale data. Misalignment causes supply gaps or overstock.</div></div>
+    <div class="insight-row" style="border-bottom:none"><span class="insight-icon">🔒</span><div class="insight-text"><strong>No controlled sharing:</strong> Sensitive batch yield, pricing, and IP data shared over email with no access control — regulatory risk and potential data leakage.</div></div>
+  </div>
+  <div class="sec-label" style="margin-top:14px">Impact on patients</div>
+  <div class="card card-warn">
+    <div style="font-size:11px;color:#854f0b;line-height:1.7">Delayed Basilmol DS release → delayed DP manufacturing → delayed batch release → patients wait longer for medicine. Every manual step adds days. The solution eliminates the paper barrier entirely.</div>
+  </div>
+</div>
+
+<!-- ============ TAB 2: DEMO ============ -->
+<div id="tab-demo" class="panel">
+
+  <!-- AAS infrastructure banner -->
+  <div style="background:#f0f4ff;border:1px solid #b5d4f4;border-radius:8px;padding:8px 12px;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+    <span style="font-size:16px">🗂️</span>
+    <div>
+      <div style="font-size:10px;font-weight:700;color:#185fa5;letter-spacing:.04em;text-transform:uppercase">AAS Portal — Active</div>
+      <div style="font-size:10px;color:#5f5e5a;margin-top:1px">Asset Administration Shell is the data exchange layer beneath this entire interface — both nodes communicate via AAS submodels</div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="primary" id="run-btn" onclick="runDemo()">▶ Run AAS Demo</button>
+    <button class="sec" onclick="resetDemo()">↺ Reset</button>
+  </div>
+  <div id="success-banner" class="success-banner">✓ Bidirectional AAS exchange complete — DS CoA → Roche + KAU Demand Forecast → Rosemary · DP Batch linked · Zero manual steps · ALCOA+ compliant</div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+
+  <!-- 2-node layout — AAS is the invisible fabric -->
+  <div style="margin:12px 0">
+    <div class="demo-nodes" style="gap:0;min-height:90px;margin-bottom:0">
+      <div class="dnode" id="node-rosemary" style="flex:1.1">
+        <div class="dnode-status ds-idle" id="status-rosemary">Idle</div>
+        <span class="dnode-icon">🏭</span>
+        <div class="dnode-title">Rosemary MES</div>
+        <div class="dnode-sub" id="sub-rosemary">Awaiting batch release</div>
+      </div>
+      <div style="flex:0 0 56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px 0">
+        <!-- Forward: DS CoA → Roche -->
+        <div style="width:100%;display:flex;align-items:center;gap:0">
+          <div class="conn-track" style="flex:1"><div class="conn-pkt" id="pkt1"></div></div>
+          <div style="color:#378add;font-size:10px;margin-left:1px">▶</div>
+        </div>
+        <div style="font-size:7px;color:#185fa5;text-align:center;font-weight:700;line-height:1.2">DS CoA</div>
+        <!-- Reverse: Demand forecast ← Roche -->
+        <div style="font-size:7px;color:#534ab7;text-align:center;font-weight:700;line-height:1.2">Demand</div>
+        <div style="width:100%;display:flex;align-items:center;gap:0">
+          <div style="color:#534ab7;font-size:10px;margin-right:1px">◀</div>
+          <div class="conn-track" style="flex:1;background:#e5e4de"><div class="conn-pkt" id="pkt-demand" style="background:#534ab7;right:-10px;left:auto"></div></div>
+        </div>
+      </div>
+      <div class="dnode" id="node-roche" style="flex:1.1;cursor:pointer;position:relative" onclick="openRochePanel()" title="Click to view Roche DS consumption data">
+        <div class="dnode-status ds-idle" id="status-roche">Idle</div>
+        <span class="dnode-icon">🏥</span>
+        <div class="dnode-title">Roche Kaiseraugst</div>
+        <div class="dnode-sub" id="sub-roche">Awaiting batch data</div>
+        <div style="position:absolute;bottom:6px;right:6px;font-size:9px;background:#e6f1fb;color:#185fa5;padding:2px 5px;border-radius:3px;font-weight:700">tap →</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:3px 0 0;font-size:9px;color:#73726c">
+      <span style="padding-left:4px">CDMO · Stein site</span>
+      <span style="font-size:8px;color:#b4b2a9">via AAS submodels (IDTA)</span>
+      <span style="padding-right:4px">KAU · DP manufacturing</span>
+    </div>
+  </div>
+
+  <!-- Multi-asset selector -->
+  <div style="margin:12px 0 8px">
+    <div class="sec-label" style="margin-bottom:6px">Basilmol Assets — DS Batch Submodel</div>
+    <div class="btn-row" id="asset-selector" style="margin-bottom:6px;flex-wrap:wrap;gap:5px">
+      <button class="pill active" onclick="selectAsset('LOT-2026-004')" id="abtn-LOT-2026-004">LOT-2026-004</button>
+      <button class="pill" onclick="selectAsset('LOT-2026-005')" id="abtn-LOT-2026-005">LOT-2026-005</button>
+      <button class="pill" onclick="selectAsset('LOT-2026-006')" id="abtn-LOT-2026-006">LOT-2026-006</button>
+    </div>
+  </div>
+
+  <div class="dcc-panel">
+    <div class="dcc-hdr">
+      <span class="dcc-hdr-title" id="dcc-panel-title">DS Batch Submodel — Basilmol LOT-2026-004</span>
+      <span class="dcc-badge pending" id="dcc-badge">Awaiting data</span>
+    </div>
+    <div class="dcc-field" id="f-batch"><span class="dcc-key">Batch ID</span><span class="dcc-val empty" id="v-batch">—</span></div>
+    <div class="dcc-field" id="f-ds"><span class="dcc-key">Drug Substance</span><span class="dcc-val empty" id="v-ds">—</span></div>
+    <div class="dcc-field" id="f-weight"><span class="dcc-key">Weight class</span><span class="dcc-val empty" id="v-weight">—</span></div>
+    <div class="dcc-field" id="f-size"><span class="dcc-key">Batch size (kg)</span><span class="dcc-val empty" id="v-size">—</span></div>
+    <div class="dcc-field" id="f-potency"><span class="dcc-key">Potency (%)</span><span class="dcc-val empty" id="v-potency">—</span></div>
+    <div class="dcc-field" id="f-yield"><span class="dcc-key">Yield (%)</span><span class="dcc-val empty" id="v-yield">—</span></div>
+    <div class="dcc-field" id="f-qc"><span class="dcc-key">QC Status</span><span class="dcc-val empty" id="v-qc">—</span></div>
+    <div class="dcc-field" id="f-release"><span class="dcc-key">Release date</span><span class="dcc-val empty" id="v-release">—</span></div>
+    <div class="dcc-field" id="f-prod"><span class="dcc-key">Production date</span><span class="dcc-val empty" id="v-prod">—</span></div>
+    <div class="dcc-field" id="f-expiry"><span class="dcc-key">Best before</span><span class="dcc-val empty" id="v-expiry">—</span></div>
+    <div class="dcc-field" id="f-cdmo"><span class="dcc-key">CDMO</span><span class="dcc-val empty" id="v-cdmo">—</span></div>
+    <div class="dcc-field" id="f-coa"><span class="dcc-key">CoA reference</span><span class="dcc-val empty" id="v-coa">—</span></div>
+    <div class="dcc-field" id="f-hash"><span class="dcc-key">Chain-of-custody hash</span><span class="dcc-val empty" id="v-hash">—</span></div>
+    <!-- DS Remaining balance (live, editable via Roche panel) -->
+    <div class="dcc-field" id="f-remaining" style="background:#fdf9ec"><span class="dcc-key" style="color:#854f0b;font-weight:700">DS Remaining (kg)</span><span class="dcc-val empty" id="v-remaining" style="color:#854f0b;font-weight:700">—</span></div>
+    <div class="dcc-field" id="f-consumed" style="background:#f8f8f6"><span class="dcc-key" style="color:#73726c">Total consumed (kg)</span><span class="dcc-val empty" id="v-consumed">—</span></div>
+    <div class="dcc-field" id="f-lastuse"><span class="dcc-key">Last machine use</span><span class="dcc-val empty" id="v-lastuse">—</span></div>
+    <!-- DP Batch linkage submodel -->
+    <div style="background:#f1efe8;padding:5px 12px;border-top:2px solid #d3d1c7;border-bottom:1px solid #e5e4de">
+      <span style="font-size:9px;font-weight:700;color:#534ab7;letter-spacing:.06em;text-transform:uppercase">↳ DP Batch Submodel — Downstream Linkage</span>
+    </div>
+    <div class="dcc-field" id="f-dp-batch"><span class="dcc-key" style="color:#534ab7">DP Batch ID</span><span class="dcc-val empty" id="v-dp-batch">—</span></div>
+    <div class="dcc-field" id="f-dp-product"><span class="dcc-key" style="color:#534ab7">Finished product</span><span class="dcc-val empty" id="v-dp-product">—</span></div>
+    <div class="dcc-field" id="f-dp-start"><span class="dcc-key" style="color:#534ab7">DP mfg start</span><span class="dcc-val empty" id="v-dp-start">—</span></div>
+    <div class="dcc-field" id="f-dp-status"><span class="dcc-key" style="color:#534ab7">DP batch status</span><span class="dcc-val empty" id="v-dp-status">—</span></div>
+    <div class="dcc-field" id="f-dp-units"><span class="dcc-key" style="color:#534ab7">DP yield (units)</span><span class="dcc-val empty" id="v-dp-units">—</span></div>
+    <div class="dcc-field" id="f-dp-patient"><span class="dcc-key" style="color:#534ab7">Patient doses</span><span class="dcc-val empty" id="v-dp-patient">—</span></div>
+  </div>
+
+  <div class="step-log" id="step-log"><div class="log-line">Waiting to start demo...</div></div>
+  <div class="time-cmp">
+    <div class="time-box before"><div class="time-val danger">4–6 weeks</div><div class="time-lbl">Manual process today</div></div>
+    <div class="time-box after"><div class="time-val success">&lt; 2 min</div><div class="time-lbl">AAS automated exchange</div></div>
+  </div>
+</div>
+
+<!-- ===== ROCHE CONSUMPTION PANEL (slide-over) ===== -->
+<div id="roche-overlay" onclick="closeRochePanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.38);z-index:900"></div>
+<div id="roche-panel" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:680px;background:#fff;border-radius:16px 16px 0 0;z-index:901;max-height:88vh;overflow-y:auto;box-shadow:0 -4px 32px rgba(0,0,0,0.18)">
+  <div style="padding:14px 16px 0;position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e4de;z-index:2">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#185fa5;letter-spacing:.06em;text-transform:uppercase">Roche Kaiseraugst — DS Consumption</div>
+        <div style="font-size:14px;font-weight:700;color:#1a1a18;margin-top:2px" id="rp-lot-title">Basilmol LOT-2026-004</div>
+        <div style="font-size:10px;color:#73726c;margin-top:1px">Real-time usage data from Kaiseraugst manufacturing equipment · via AAS Consumption Submodel</div>
+      </div>
+      <button onclick="closeRochePanel()" style="background:#f1efe8;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-family:inherit;color:#5f5e5a;flex-shrink:0;margin-top:2px">✕ Close</button>
+    </div>
+    <!-- Lot selector inside panel -->
+    <div style="display:flex;gap:5px;padding-bottom:10px;overflow-x:auto" id="rp-lot-selector">
+      <button class="pill active" onclick="rpSelectLot('LOT-2026-004')" id="rpbtn-LOT-2026-004">LOT-004</button>
+      <button class="pill" onclick="rpSelectLot('LOT-2026-005')" id="rpbtn-LOT-2026-005">LOT-005</button>
+      <button class="pill" onclick="rpSelectLot('LOT-2026-006')" id="rpbtn-LOT-2026-006">LOT-006 ⚠</button>
+    </div>
+  </div>
+  <div style="padding:14px 16px 24px" id="rp-body">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<!-- ============ TAB 3: FORECAST ============ -->
+<div id="tab-forecast" class="panel">
+  <div class="sec-label">Basilmol DS demand forecast — Kaiseraugst site (kg/month)</div>
+  <div id="chart-container">
+    <div id="chart-header">
+      <h3>Basilmol DS — 18-month demand</h3>
+      <div class="chart-legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#3b6d11"></div><span>Actual</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#378add;border-top:1px dashed #378add"></div><span>AI Forecast</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#d3d1c7"></div><span>Capacity plan</span></div>
+      </div>
+    </div>
+    <div id="chart-wrap"><svg id="ds-chart" viewBox="0 0 600 230" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="chart-alert" id="gap-alert" style="display:none">
+      <strong>⚠ Supply gap predicted — Apr–Jun 2026</strong>
+      AI forecast: 96–103 kg/month · Rosemary capacity plan: 90 kg/month · Gap: +6–13 kg<br>
+      <span style="color:#5f5e5a">→ AAS forecast submodel triggers automated procurement alert to Rosemary 12 weeks ahead</span>
+    </div>
+    <div class="chart-toggles">
+      <button class="pill active" id="tog-actual" onclick="toggleLayer('actual')">Actuals</button>
+      <button class="pill active" id="tog-forecast" onclick="toggleLayer('forecast')">Forecast</button>
+      <button class="pill active" id="tog-capacity" onclick="toggleLayer('capacity')">Capacity</button>
+      <button class="pill active" id="tog-batches" onclick="toggleLayer('batches')">Batch events</button>
+      <button class="pill active" id="tog-alert" onclick="toggleLayer('alert')">Gap alert</button>
+    </div>
+  </div>
+  <div class="card card-info" style="margin-top:4px">
+    <div style="font-size:11px;font-weight:700;color:#185fa5;margin-bottom:5px">How AAS enables real-time forecasting</div>
+    <div style="font-size:11px;color:#1a1a18;line-height:1.7">Each Basilmol DS batch written to the AAS portal Forecast Submodel (IDTA-02010). Roche SAP reads batch yield, timing, and deviation data automatically. ML model refreshes demand forecast on every new data point — no Excel email, no lag, no manual update.</div>
+  </div>
+</div>
+
+<!-- ============ TAB 4: IAM & SECURITY ============ -->
+<div id="tab-iam" class="panel">
+  <div class="sec-label">Select a role to see permissions</div>
+  <div class="role-selector">
+    <button class="role-btn rosemary active" id="rbtn-rosemary-op" onclick="selectRole('rosemary-op')"><span class="rb-name">Rosemary Operator</span><span class="rb-org">CDMO · Manufacturing</span></button>
+    <button class="role-btn rosemary" id="rbtn-rosemary-qa" onclick="selectRole('rosemary-qa')"><span class="rb-name">Rosemary QA</span><span class="rb-org">CDMO · Quality</span></button>
+    <button class="role-btn roche" id="rbtn-roche-sc" onclick="selectRole('roche-sc')"><span class="rb-name">Roche Supply Chain</span><span class="rb-org">Kaiseraugst · Planning</span></button>
+    <button class="role-btn roche" id="rbtn-roche-qa" onclick="selectRole('roche-qa')"><span class="rb-name">Roche QA</span><span class="rb-org">Kaiseraugst · Quality</span></button>
+    <button class="role-btn admin" id="rbtn-it-admin" onclick="selectRole('it-admin')"><span class="rb-name">IT Admin</span><span class="rb-org">Roche IT · Security</span></button>
+  </div>
+  <div id="role-desc" class="card card-info" style="margin-bottom:10px;font-size:11px;color:#185fa5;font-weight:600">Rosemary Operator: Can write batch data and yield metrics to the AAS portal. Cannot see pricing, strategic forecasts, or other companies' data. Write access is scoped to their own batch IDs only.</div>
+  <table class="perm-table" id="perm-table">
+    <thead><tr><th>Data / Submodel</th><th>Access level</th><th>Scope</th></tr></thead>
+    <tbody id="perm-tbody"></tbody>
+  </table>
+  <div class="sec-label" style="margin-top:14px">Data protection &amp; cyber threat prevention</div>
+  <div class="sec-grid">
+    <div class="sec-card card-info"><span class="sec-icon">🔐</span><div class="sec-title">ABAC Access Control</div><div class="sec-desc">AAS Security Part 4 — attribute-based policies. No static passwords. Role + context + time-of-day enforced at the submodel property level.</div></div>
+    <div class="sec-card card-danger"><span class="sec-icon">🚫</span><div class="sec-title">Data Leakage Prevention</div><div class="sec-desc">IP and pricing data compartmentalised in separate submodels. Rosemary cannot access Roche formulation data. Roche cannot access Rosemary cost structure.</div></div>
+    <div class="sec-card card-warn"><span class="sec-icon">👁️</span><div class="sec-title">Anomaly Detection</div><div class="sec-desc">Every API call logged with actor, timestamp, IP, and data diff. Unusual access patterns (bulk export, off-hours reads) trigger security alert within 60s.</div></div>
+    <div class="sec-card card-success"><span class="sec-icon">🔗</span><div class="sec-title">End-to-End Encryption</div><div class="sec-desc">TLS 1.3 in transit. AES-256 at rest. AASX file packages are signed with X.509 certificates — tamper-evident, non-repudiable chain of custody.</div></div>
+  </div>
+</div>
+
+<!-- ============ TAB 5: TRACEABILITY ============ -->
+<div id="tab-trace" class="panel">
+  <div class="sec-label">WHO-mandated full supply chain traceability — Basilmol DS</div>
+  <div style="padding:8px 0">
+    <div class="trace-step">
+      <div class="trace-left"><div class="trace-dot" style="background:#534ab7">1</div><div class="trace-line"></div></div>
+      <div class="trace-content">
+        <div class="trace-title">API Synthesis — Rosemary (Stein site)</div>
+        <div class="trace-sub">Active Pharmaceutical Ingredient manufactured and tested. AAS portal created with raw material CoA, synthesis parameters, and in-process controls linked as submodels.</div>
+        <div class="trace-tags"><span class="trace-tag who">WHO GMP Part 1</span><span class="trace-tag aas">AAS: API Shell</span><span class="trace-tag gmp">ICH Q7</span></div>
+      </div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-left"><div class="trace-dot" style="background:#185fa5">2</div><div class="trace-line"></div></div>
+      <div class="trace-content">
+        <div class="trace-title">DS Batch Manufacturing — Rosemary</div>
+        <div class="trace-sub">Basilmol DS batch produced. Batch CoA, yield, potency, and deviation reports written directly to AAS DS Batch Submodel via API. Linked to API shell by parent-child relationship.</div>
+        <div class="trace-tags"><span class="trace-tag who">WHO TRS 1044</span><span class="trace-tag aas">AAS: DS Batch Shell</span><span class="trace-tag gmp">EU GMP Annex 11</span></div>
+      </div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-left"><div class="trace-dot" style="background:#3b6d11">3</div><div class="trace-line"></div></div>
+      <div class="trace-content">
+        <div class="trace-title">Batch Release &amp; Transfer — Rosemary → Roche</div>
+        <div class="trace-sub">QP release triggers AAS submodel status update. Roche QMS polls registry and auto-imports release data. Shipping temperature, container ID, and chain-of-custody hash appended to shell.</div>
+        <div class="trace-tags"><span class="trace-tag who">WHO GDP Guidelines</span><span class="trace-tag aas">AAS: Logistics Shell</span><span class="trace-tag gmp">DSCSA / FMD</span></div>
+      </div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-left"><div class="trace-dot" style="background:#854f0b">4</div><div class="trace-line"></div></div>
+      <div class="trace-content">
+        <div class="trace-title">Receipt &amp; QC — Roche Kaiseraugst</div>
+        <div class="trace-sub">Incoming goods inspection auto-reconciled against AAS shell data. No manual CoA comparison. Deviations flagged immediately. Kaiseraugst QMS updated in real time.</div>
+        <div class="trace-tags"><span class="trace-tag who">WHO GMP Part 1 §4</span><span class="trace-tag aas">AAS: Site Inventory Shell</span><span class="trace-tag gmp">ICH Q10</span></div>
+      </div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-left"><div class="trace-dot" style="background:#a32d2d">5</div><div class="trace-line"></div></div>
+      <div class="trace-content">
+        <div class="trace-title">DP Manufacturing &amp; Regulatory Submission</div>
+        <div class="trace-sub">Full traceability record available for regulatory dossier with one query. Every AAS shell in the chain is auditable, timestamped, and non-repudiable. CMC package built directly from shell data.</div>
+        <div class="trace-tags"><span class="trace-tag who">WHO Prequalification</span><span class="trace-tag aas">AAS: Full Chain Query</span><span class="trace-tag gmp">ICH Q12</span></div>
+      </div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-left"><div class="trace-dot" style="background:#1a1a18">✓</div></div>
+      <div class="trace-content" style="padding-bottom:0">
+        <div class="trace-title">Patient</div>
+        <div class="trace-sub">Verified, traceable medicine. Full chain-of-custody from API molecule to dispensed product — available in seconds for any regulatory authority.</div>
+        <div class="trace-tags"><span class="trace-tag who">WHO Essential Medicines</span><span class="trace-tag gmp">ALCOA+ end-to-end</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="sec-label" style="margin-top:10px">ALCOA+ by design</div>
+  <div class="alcoa-grid">
+    <div class="alcoa-card"><div class="alcoa-letter">A</div><div class="alcoa-principle">Attributable</div><div class="alcoa-how">Every write to AAS records actor ID, system, and timestamp — who entered it and from which system</div></div>
+    <div class="alcoa-card"><div class="alcoa-letter">C</div><div class="alcoa-principle">Contemporaneous</div><div class="alcoa-how">Data written at the moment of the event by the source system — not re-entered hours or days later</div></div>
+    <div class="alcoa-card"><div class="alcoa-letter">O</div><div class="alcoa-principle">Original</div><div class="alcoa-how">Rosemary MES writes directly to AAS — no transcription, no PDF intermediary, data is born digital</div></div>
+    <div class="alcoa-card"><div class="alcoa-letter">A</div><div class="alcoa-principle">Accurate</div><div class="alcoa-how">Machine-to-machine eliminates transcription error entirely. SHA-256 hash detects any tampering</div></div>
+    <div class="alcoa-card" style="grid-column:1/-1"><div class="alcoa-letter">+ C C E A</div><div class="alcoa-principle">Complete · Consistent · Enduring · Available</div><div class="alcoa-how">Full DCC/CoA per IDTA standard. Registry ensures discoverability. ABAC governs access. Immutable audit trail. Retrievable by any authorised regulator within seconds.</div></div>
+  </div>
+</div>
+
+<!-- ============ TAB 6: ADAPTIVE ============ -->
+<div id="tab-adapt" class="panel">
+  <div class="sec-label">See this solution through your lens</div>
+  <div class="persona-selector">
+    <button class="persona-btn active" id="pbtn-exec" onclick="selectPersona('exec')"><span class="pb-role">Executive</span><span class="pb-desc">Business impact</span></button>
+    <button class="persona-btn" id="pbtn-sc" onclick="selectPersona('sc')"><span class="pb-role">Supply Chain</span><span class="pb-desc">Ops &amp; planning</span></button>
+    <button class="persona-btn" id="pbtn-qa" onclick="selectPersona('qa')"><span class="pb-role">QA / Regulatory</span><span class="pb-desc">Compliance</span></button>
+    <button class="persona-btn" id="pbtn-it" onclick="selectPersona('it')"><span class="pb-role">IT Engineer</span><span class="pb-desc">Architecture</span></button>
+  </div>
+
+  <!-- EXECUTIVE -->
+  <div class="persona-panel active" id="persona-exec">
+    <div class="metric-grid">
+      <div class="metric-card"><div class="metric-val success">4×</div><div class="metric-lbl">Faster DS batch release cycle</div></div>
+      <div class="metric-card"><div class="metric-val info">€1.8M</div><div class="metric-lbl">Estimated annual saving (Kaiseraugst)</div></div>
+      <div class="metric-card"><div class="metric-val purple">99.7%</div><div class="metric-lbl">Data accuracy (vs ~96% manual)</div></div>
+      <div class="metric-card"><div class="metric-val warn">90 days</div><div class="metric-lbl">Pilot to live at Kaiseraugst</div></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">Why this wins for Roche leadership</div>
+      <div class="insight-row"><span class="insight-icon">💰</span><div class="insight-text"><strong>Supply security:</strong> Automated forecasting eliminates the 18% error rate that causes costly emergency orders and production stoppages.</div></div>
+      <div class="insight-row"><span class="insight-icon">🌍</span><div class="insight-text"><strong>Scalable ecosystem:</strong> One AAS standard works across all CDMOs. Connect Rosemary today, extend to any future partner with zero rework.</div></div>
+      <div class="insight-row"><span class="insight-icon">🛡️</span><div class="insight-text"><strong>Regulatory readiness:</strong> WHO, EMA, FDA all increasing requirements for electronic batch records. This solution future-proofs Roche now.</div></div>
+    </div>
+  </div>
+
+  <!-- SUPPLY CHAIN -->
+  <div class="persona-panel" id="persona-sc">
+    <div class="metric-grid">
+      <div class="metric-card"><div class="metric-val success">Real-time</div><div class="metric-lbl">Batch status visibility</div></div>
+      <div class="metric-card"><div class="metric-val info">±4%</div><div class="metric-lbl">Forecast accuracy (vs ±18% today)</div></div>
+      <div class="metric-card"><div class="metric-val warn">12 weeks</div><div class="metric-lbl">AI supply gap early warning</div></div>
+      <div class="metric-card"><div class="metric-val purple">Zero</div><div class="metric-lbl">Manual forecast update steps</div></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">What changes in your daily work</div>
+      <div class="insight-row"><span class="insight-icon">📡</span><div class="insight-text"><strong>Live batch dashboard:</strong> When Rosemary completes a DS batch, Kaiseraugst SAP updates automatically. No more chasing emails or waiting for weekly status reports.</div></div>
+      <div class="insight-row"><span class="insight-icon">🤖</span><div class="insight-text"><strong>AI-powered demand sync:</strong> Roche SAP pushes forecast updates to Rosemary AAS shell automatically. Rosemary production plan adjusts in real time — no Excel, no lag.</div></div>
+      <div class="insight-row"><span class="insight-icon">⚡</span><div class="insight-text"><strong>Automated alerts:</strong> If ML model detects a supply gap 12 weeks out, a purchase order trigger is raised without human intervention. You act, not react.</div></div>
+    </div>
+  </div>
+
+  <!-- QA / REGULATORY -->
+  <div class="persona-panel" id="persona-qa">
+    <div class="metric-grid">
+      <div class="metric-card"><div class="metric-val success">ALCOA+</div><div class="metric-lbl">By design, not bolt-on</div></div>
+      <div class="metric-card"><div class="metric-val info">Annex 11</div><div class="metric-lbl">Full alignment</div></div>
+      <div class="metric-card"><div class="metric-val purple">WHO</div><div class="metric-lbl">TRS 1044 traceability</div></div>
+      <div class="metric-card"><div class="metric-val warn">Seconds</div><div class="metric-lbl">Full audit trail retrieval</div></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">What this means for quality &amp; compliance</div>
+      <div class="insight-row"><span class="insight-icon">📋</span><div class="insight-text"><strong>No more paper CoA reconciliation:</strong> Batch release data comes pre-verified from the Rosemary MES. Your role is exception management, not data entry checking.</div></div>
+      <div class="insight-row"><span class="insight-icon">🔍</span><div class="insight-text"><strong>Audit-ready in seconds:</strong> Any regulator query — EMA, Swissmedic, WHO inspector — is answered by querying the AAS chain. Every write has actor, timestamp, and hash.</div></div>
+      <div class="insight-row"><span class="insight-icon">✅</span><div class="insight-text"><strong>Stronger than paper signature:</strong> Cryptographic non-repudiation via X.509 certificate on every AASX package is legally and regulatorily stronger than a wet signature on a PDF.</div></div>
+    </div>
+  </div>
+
+  <!-- IT ENGINEER -->
+  <div class="persona-panel" id="persona-it">
+    <div class="card card-info" style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#185fa5;margin-bottom:6px">Architecture at a glance</div>
+      <div style="font-size:10px;font-family:'SF Mono',Consolas,monospace;line-height:1.9;color:#1a1a18">
+        Rosemary MES → AAS API (REST/JSON) → AAS Repository<br>
+        AAS Registry (IDTA Part 2) → asset discovery<br>
+        Roche QMS / SAP → poll registry → fetch submodel<br>
+        ABAC engine (AAS Security Part 4) → attribute policy<br>
+        AASX fallback for offline / small-lab exchange<br>
+        SHA-256 hash per submodel write → tamper-evident
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">Key technical standards &amp; endpoints</div>
+      <div class="insight-row"><span class="insight-icon">📡</span><div class="insight-text"><strong>AAS Part 2 (API):</strong> GET /submodels/{id}, PUT /submodels/{id}/elements — standard IDTA REST interface, no custom integration needed.</div></div>
+      <div class="insight-row"><span class="insight-icon">🔐</span><div class="insight-text"><strong>ABAC policy engine:</strong> Policies defined as JSON — role + assetId + submodelId + operation → allow/deny. No ACL table maintenance.</div></div>
+      <div class="insight-row"><span class="insight-icon">🗃️</span><div class="insight-text"><strong>No vendor lock-in:</strong> IDTA open standard. Deploy BaSyx, Eclipse AAS4J, or any compliant runtime. Migrate between vendors without data loss.</div></div>
+      <div class="insight-row"><span class="insight-icon">📦</span><div class="insight-text"><strong>AASX offline mode:</strong> Small suppliers without API support send signed AASX packages. Same data model, zero integration effort on their end.</div></div>
+    </div>
+  </div>
+
+  <!-- IMPLEMENTATION TIMELINE — visible for all personas -->
+  <div style="margin-top:18px;border-top:1px solid #e5e4de;padding-top:16px">
+    <div class="sec-label">Change implementation — project roadmap</div>
+    <!-- Timeline track -->
+    <div style="position:relative;padding:8px 0 0">
+      <!-- Horizontal bar -->
+      <div style="height:6px;background:linear-gradient(90deg,#0b41cd 0%,#1482FA 60%,#BDE3FF 100%);border-radius:3px;margin:32px 0 28px;position:relative">
+        <!-- Q1 dot -->
+        <div style="position:absolute;left:8%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#022366;border:2px solid #fff;box-shadow:0 0 0 2px #022366"></div>
+        <!-- Q2 dot -->
+        <div style="position:absolute;left:33%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#0b41cd;border:2px solid #fff;box-shadow:0 0 0 2px #0b41cd"></div>
+        <!-- Q3 dot -->
+        <div style="position:absolute;left:62%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#1482FA;border:2px solid #fff;box-shadow:0 0 0 2px #1482FA"></div>
+        <!-- Q4 dot -->
+        <div style="position:absolute;left:88%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#185fa5;border:2px solid #fff;box-shadow:0 0 0 2px #185fa5"></div>
+        <!-- Q1 label above -->
+        <div style="position:absolute;left:8%;top:-26px;transform:translateX(-50%);font-size:9px;font-weight:700;color:#022366;text-align:center;white-space:nowrap">Q1</div>
+        <!-- Q2 label above -->
+        <div style="position:absolute;left:33%;top:-26px;transform:translateX(-50%);font-size:9px;font-weight:700;color:#0b41cd;text-align:center;white-space:nowrap">Q2</div>
+        <!-- Q3 label above -->
+        <div style="position:absolute;left:62%;top:-26px;transform:translateX(-50%);font-size:9px;font-weight:700;color:#1482FA;text-align:center;white-space:nowrap">Q3</div>
+        <!-- Q4 label above -->
+        <div style="position:absolute;left:88%;top:-26px;transform:translateX(-50%);font-size:9px;font-weight:700;color:#185fa5;text-align:center;white-space:nowrap">Q4</div>
+      </div>
+      <!-- Phase cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+        <div style="border:1px solid #022366;border-radius:8px;padding:9px 10px;background:#f8f8f6">
+          <div style="font-size:10px;font-weight:700;color:#022366;margin-bottom:4px">Q1 — Data Completion</div>
+          <div style="font-size:10px;color:#73726c;line-height:1.5">Historical DS batch data migration · AAS registry setup · System configuration · Data validation &amp; gap analysis</div>
+        </div>
+        <div style="border:1px solid #0b41cd;border-radius:8px;padding:9px 10px;background:#f8f8f6">
+          <div style="font-size:10px;font-weight:700;color:#0b41cd;margin-bottom:4px">Q2 — Data Migration</div>
+          <div style="font-size:10px;color:#73726c;line-height:1.5">Live MES-to-AAS API integration · CoA submodel go-live · Rosemary operator training · Parallel run validation</div>
+        </div>
+        <div style="border:1px solid #1482FA;border-radius:8px;padding:9px 10px;background:#f8f8f6">
+          <div style="font-size:10px;font-weight:700;color:#1482FA;margin-bottom:4px">Q3 — Model Training &amp; Validation</div>
+          <div style="font-size:10px;color:#73726c;line-height:1.5">ML demand forecast model training on historical data · IQ/OQ/PQ validation per Annex 11 · Stakeholder UAT sign-off</div>
+        </div>
+        <div style="border:1px solid #185fa5;border-radius:8px;padding:9px 10px;background:#e6f1fb">
+          <div style="font-size:10px;font-weight:700;color:#185fa5;margin-bottom:4px">Q4 — Implementation &amp; Monitoring</div>
+          <div style="font-size:10px;color:#185fa5;line-height:1.5">Automated demand prediction live · Capacity gap alerts active · Operational integration complete · Supply Chain planner in supervisory role only</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;background:#eaf3de;border:1px solid #c0dd97;border-radius:8px;padding:8px 12px;font-size:10px;color:#3b6d11">
+        <strong>Target outcome by Q4:</strong> Supply Chain planner supervises the process only — no manual data entry, no email forecasts, no PDF reconciliation. Full Pharma 4.0 data flow operational.
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- end app -->
+
+<!-- ============ TAB 7: QA REVIEW ============ -->
+<div id="tab-qa" class="panel" style="display:none">
+</div>
+
+<script>
+/* ===== TAB NAVIGATION ===== */
+var TABS=['problem','demo','forecast','iam','trace','adapt','qa'];
+function switchTab(t){
+  TABS.forEach(function(x){
+    document.querySelector('[onclick="switchTab(\''+x+'\')"]').classList.toggle('active',x===t);
+    document.getElementById('tab-'+x).classList.toggle('active',x===t);
+    document.getElementById('tab-'+x).style.display=(x===t)?'block':'none';
+  });
+  if(t==='forecast')renderChart();
+  if(t==='qa')renderQA();
+  window.scrollTo(0,0);
+}
+
+/* ===== DEMO SIMULATION ===== */
+var running=false;
+
+// Machine consumption state per lot (kg used per machine, with history log)
+var MACHINE_CONSUMPTION = {
+  'LOT-2026-004': {
+    totalBatch: 87.4,
+    machines: [
+      { id:'MIX-KA-01', name:'Blending Unit KA-01', type:'Granulator', consumed:14.2,
+        log:[
+          {ts:'2026-04-19 06:12',kg:5.8,op:'OP-Müller',run:'RUN-004-A',note:'Initial blend'},
+          {ts:'2026-04-19 09:44',kg:4.1,op:'OP-Müller',run:'RUN-004-A',note:'Second pass'},
+          {ts:'2026-04-20 07:30',kg:4.3,op:'OP-Schmidt',run:'RUN-004-B',note:'Batch top-up'}
+        ]},
+      { id:'COAT-KA-03', name:'Coating Pan KA-03', type:'Film coater', consumed:21.7,
+        log:[
+          {ts:'2026-04-20 10:05',kg:8.9,op:'OP-Fischer',run:'RUN-004-C',note:'Tablet coating pass 1'},
+          {ts:'2026-04-21 08:20',kg:7.4,op:'OP-Fischer',run:'RUN-004-C',note:'Coating pass 2'},
+          {ts:'2026-04-21 14:55',kg:5.4,op:'OP-Weber',run:'RUN-004-D',note:'Final coat layer'}
+        ]},
+      { id:'COMP-KA-07', name:'Compression Unit KA-07', type:'Tablet press', consumed:18.5,
+        log:[
+          {ts:'2026-04-22 07:00',kg:9.2,op:'OP-Braun',run:'RUN-004-E',note:'Tableting run 1'},
+          {ts:'2026-04-22 15:30',kg:9.3,op:'OP-Braun',run:'RUN-004-E',note:'Tableting run 2'}
+        ]}
+    ]
+  },
+  'LOT-2026-005': {
+    totalBatch: 90.1,
+    machines: [
+      { id:'MIX-KA-01', name:'Blending Unit KA-01', type:'Granulator', consumed:0,
+        log:[]},
+      { id:'COAT-KA-03', name:'Coating Pan KA-03', type:'Film coater', consumed:0,
+        log:[]},
+      { id:'COMP-KA-07', name:'Compression Unit KA-07', type:'Tablet press', consumed:0,
+        log:[]}
+    ]
+  },
+  'LOT-2026-006': {
+    totalBatch: 41.3,
+    machines: [
+      { id:'MIX-KA-01', name:'Blending Unit KA-01', type:'Granulator', consumed:2.1,
+        log:[
+          {ts:'2026-04-17 08:10',kg:2.1,op:'OP-Müller',run:'RUN-006-A',note:'Quarantined — partial use before OOS result'}
+        ]}
+    ]
+  }
+};
+
+var rpActiveLot = 'LOT-2026-004';
+
+function log(msg,cls){
+  var d=document.getElementById('step-log');
+  var ts=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  var l=document.createElement('div');l.className='log-line'+(cls?' '+cls:'');l.textContent='['+ts+'] '+msg;
+  d.appendChild(l);d.scrollTop=d.scrollHeight;
+}
+function setNode(id,state,sub){
+  var n=document.getElementById('node-'+id);
+  if(!n)return;
+  var s=document.getElementById('status-'+id);
+  var sb=document.getElementById('sub-'+id);
+  n.className='dnode'+(state?' '+state:'')+(id==='roche'?' cursor-pointer':'');
+  if(id==='roche'){n.style.cursor='pointer';}
+  s.className='dnode-status '+(state==='active'?'ds-active':state==='done'?'ds-done':'ds-idle');
+  s.textContent=state==='active'?'Running':state==='done'?'Done':'Idle';
+  if(sub)sb.textContent=sub;
+}
+function setField(fid,vid,val,cls){
+  var fel=document.getElementById(fid);if(!fel)return;
+  fel.classList.add('populated');
+  var v=document.getElementById(vid);if(!v)return;
+  v.textContent=val;
+  v.className='dcc-val'+(cls?' '+cls:'');
+}
+function setProgress(pct){
+  var f=document.getElementById('prog-fill');f.style.width=pct+'%';
+  if(pct>=100)f.classList.add('done');
+}
+function firePacket(pid){
+  var p=document.getElementById(pid);if(!p)return;
+  p.classList.remove('animate');void p.offsetWidth;p.classList.add('animate');
+}
+function delay(ms){return new Promise(function(r){setTimeout(r,ms)})}
+
+function calcConsumedForLot(lot){
+  var data=MACHINE_CONSUMPTION[lot];if(!data)return{consumed:0,remaining:data?data.totalBatch:0};
+  var total=data.machines.reduce(function(s,m){return s+m.consumed;},0);
+  return{consumed:Math.round(total*10)/10, remaining:Math.round((data.totalBatch-total)*10)/10};
+}
+
+function getLastUse(lot){
+  var data=MACHINE_CONSUMPTION[lot];if(!data)return'—';
+  var latest=null,latestMach='';
+  data.machines.forEach(function(m){
+    if(m.log.length>0){
+      var last=m.log[m.log.length-1];
+      if(!latest||last.ts>latest.ts){latest=last;latestMach=m.name;}
+    }
+  });
+  if(!latest)return'—';
+  return latestMach+' · '+latest.ts;
+}
+
+async function runDemo(){
+  if(running)return;running=true;
+  var lot=activeAsset;
+  document.getElementById('run-btn').disabled=true;
+  document.getElementById('step-log').innerHTML='';
+  document.getElementById('success-banner').style.display='none';
+  resetFields();
+  log('AAS bidirectional exchange starting — Basilmol '+lot,'info');setProgress(6);
+  await delay(600);
+  setNode('rosemary','active','Batch release in progress...');
+  log('Rosemary MES: DS batch manufacturing complete, QP release initiated','info');setProgress(15);
+  await delay(900);
+  var a=ASSETS[lot];
+  setField('f-batch','v-batch',lot);
+  setField('f-ds','v-ds','Basilmol Drug Substance');
+  log('DS Batch CoA data generated — IDTA-02011 submodel serialised');setProgress(24);
+  await delay(600);
+  setField('f-weight','v-weight',a.weight);
+  setField('f-size','v-size',a.size);
+  setField('f-potency','v-potency',a.potency,'pass');
+  setField('f-yield','v-yield',a.yield);
+  setField('f-qc','v-qc',a.qc,a.qc==='PASS'?'pass':'');
+  setProgress(33);
+  await delay(600);
+  setNode('rosemary','done','CoA data packaged — transmitting to AAS Registry');
+  log('Rosemary API → writing DS Batch Submodel to AAS Registry (IDTA Part 2)','info');
+  firePacket('pkt1');setProgress(43);
+  await delay(1100);
+  setField('f-prod','v-prod',a.prod);
+  setField('f-release','v-release',a.release);
+  setField('f-expiry','v-expiry',a.bestbefore);
+  setField('f-cdmo','v-cdmo',a.cdmo);
+  setField('f-coa','v-coa',a.coa);
+  log('AAS Registry updated — submodel cryptographically signed (X.509), Kaiseraugst authorised to read','success');
+  setProgress(52);
+  document.getElementById('dcc-badge').textContent='Submodel live — AAS Registry';
+  document.getElementById('dcc-badge').className='dcc-badge pending';
+  await delay(700);
+  log('Roche QMS + SAP polling AAS Registry — asset discovered via IDTA Part 2 discovery API','info');setProgress(61);
+  await delay(800);
+  setNode('roche','active','Importing DS batch data + scheduling DP...');
+  await delay(900);
+  setField('f-hash','v-hash',a.hash);
+  var cons=calcConsumedForLot(lot);
+  setField('f-remaining','v-remaining',cons.remaining+' kg');
+  setField('f-consumed','v-consumed',cons.consumed+' kg');
+  setField('f-lastuse','v-lastuse',getLastUse(lot));
+  document.getElementById('v-remaining').style.color='#854f0b';
+  document.getElementById('v-remaining').style.fontWeight='700';
+  log('Roche QMS auto-import complete — DS batch linked to DP manufacturing schedule','success');
+  setProgress(70);
+  await delay(600);
+  // Populate DP Batch linkage
+  var dp=a.dp;
+  var isBlocked=dp.status.indexOf('BLOCKED')>-1||dp.status.indexOf('quarantined')>-1;
+  setField('f-dp-batch','v-dp-batch',dp.batch);
+  setField('f-dp-product','v-dp-product',dp.product);
+  setField('f-dp-start','v-dp-start',dp.start);
+  var dpStat=document.getElementById('v-dp-status');
+  document.getElementById('f-dp-status').classList.add('populated');
+  dpStat.textContent=dp.status;dpStat.className='dcc-val';
+  dpStat.style.color=isBlocked?'#a32d2d':dp.status==='In-process'?'#3b6d11':'#854f0b';dpStat.style.fontWeight='700';
+  setField('f-dp-units','v-dp-units',dp.units);
+  var dpPat=document.getElementById('v-dp-patient');
+  document.getElementById('f-dp-patient').classList.add('populated');
+  dpPat.textContent=dp.patient;dpPat.className='dcc-val';
+  dpPat.style.color=isBlocked?'#a32d2d':'#534ab7';dpPat.style.fontWeight=isBlocked?'700':'600';
+  log('DP Batch Submodel linked — DS→DP traceability chain closed (IDTA-02011 parent-child)','success');
+  setProgress(79);
+  document.getElementById('dcc-badge').textContent='Imported by Roche QMS + SAP';
+  document.getElementById('dcc-badge').className='dcc-badge done';
+  await delay(800);
+  // Reverse: KAU demand planning feedback to Rosemary
+  log('KAU SAP Forecast Submodel — computing updated DS demand from DP consumption rate','info');
+  setProgress(86);
+  await delay(700);
+  log('Roche SAP → writing Demand Forecast Submodel to AAS Registry → Rosemary MES pull','info');
+  // Fire reverse demand packet
+  var pd=document.getElementById('pkt-demand');
+  if(pd){pd.classList.remove('animate-rev');void pd.offsetWidth;pd.classList.add('animate-rev');}
+  await delay(900);
+  setNode('rosemary','active','Receiving KAU demand update...');
+  await delay(600);
+  setNode('rosemary','done','Demand forecast received — production plan updated');
+  log('Rosemary MES production plan auto-updated — DS demand forecast for next 12 weeks synchronised','success');
+  setProgress(94);
+  await delay(500);
+  setNode('roche','done','DP mfg scheduled. DS consumption tracking active.');
+  log('Bidirectional AAS exchange complete — full audit trail, zero manual steps, ALCOA+ compliant','success');
+  setProgress(100);
+  await delay(400);
+  document.getElementById('success-banner').style.display='block';
+  running=false;document.getElementById('run-btn').disabled=false;
+}
+
+function resetFields(){
+  ['f-batch','f-ds','f-weight','f-size','f-potency','f-yield','f-qc','f-release','f-prod','f-expiry','f-cdmo','f-coa','f-hash','f-remaining','f-consumed','f-lastuse','f-dp-batch','f-dp-product','f-dp-start','f-dp-status','f-dp-units','f-dp-patient'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.classList.remove('populated');
+  });
+  ['v-batch','v-ds','v-weight','v-size','v-potency','v-yield','v-qc','v-release','v-prod','v-expiry','v-cdmo','v-coa','v-hash','v-remaining','v-consumed','v-lastuse','v-dp-batch','v-dp-product','v-dp-start','v-dp-status','v-dp-units','v-dp-patient'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.textContent='—';el.className='dcc-val empty';el.style.color='';el.style.fontWeight='';
+  });
+  document.getElementById('dcc-badge').textContent='Awaiting data';
+  document.getElementById('dcc-badge').className='dcc-badge pending';
+}
+function resetDemo(){
+  running=false;document.getElementById('run-btn').disabled=false;
+  document.getElementById('success-banner').style.display='none';
+  setNode('rosemary','','Awaiting batch release');
+  setNode('roche','','Awaiting batch data');
+  resetFields();
+  document.getElementById('step-log').innerHTML='<div class="log-line">Waiting to start demo...</div>';
+  var f=document.getElementById('prog-fill');f.style.width='0%';f.classList.remove('done');
+}
+
+/* ===== ROCHE CONSUMPTION PANEL ===== */
+function openRochePanel(){
+  rpActiveLot=activeAsset;
+  document.getElementById('roche-overlay').style.display='block';
+  document.getElementById('roche-panel').style.display='block';
+  document.body.style.overflow='hidden';
+  rpSelectLot(rpActiveLot);
+}
+function closeRochePanel(){
+  document.getElementById('roche-overlay').style.display='none';
+  document.getElementById('roche-panel').style.display='none';
+  document.body.style.overflow='';
+}
+function rpSelectLot(lot){
+  rpActiveLot=lot;
+  ['LOT-2026-004','LOT-2026-005','LOT-2026-006'].forEach(function(k){
+    var b=document.getElementById('rpbtn-'+k);if(b)b.classList.toggle('active',k===lot);
+  });
+  document.getElementById('rp-lot-title').textContent='Basilmol '+lot;
+  renderRochePanel();
+}
+
+function rpAdjust(lotKey, machIdx, delta){
+  var data=MACHINE_CONSUMPTION[lotKey];
+  var mach=data.machines[machIdx];
+  var newVal=Math.round((mach.consumed+delta)*10)/10;
+  if(newVal<0)newVal=0;
+  var maxAllowed=data.totalBatch - data.machines.reduce(function(s,m,i){return i===machIdx?s:s+m.consumed;},0);
+  if(newVal>maxAllowed)newVal=Math.round(maxAllowed*10)/10;
+  mach.consumed=newVal;
+  // Append to log
+  if(delta!==0){
+    var now=new Date();
+    var ts=now.getFullYear()+'-'
+      +String(now.getMonth()+1).padStart(2,'0')+'-'
+      +String(now.getDate()).padStart(2,'0')+' '
+      +String(now.getHours()).padStart(2,'0')+':'
+      +String(now.getMinutes()).padStart(2,'0');
+    mach.log.push({
+      ts:ts,
+      kg:Math.abs(delta),
+      op:'OP-Manual',
+      run:'MANUAL',
+      note:delta>0?'Manual addition (+'+Math.abs(delta)+' kg)':'Manual reduction (−'+Math.abs(delta)+' kg)'
+    });
+  }
+  // Refresh panel
+  renderRochePanel();
+  // Refresh submodel fields if visible
+  refreshSubmodelConsumption(lotKey);
+}
+
+function refreshSubmodelConsumption(lot){
+  if(activeAsset!==lot)return;
+  var cons=calcConsumedForLot(lot);
+  var vr=document.getElementById('v-remaining');
+  var vc=document.getElementById('v-consumed');
+  var vl=document.getElementById('v-lastuse');
+  if(vr&&vr.textContent!=='—'){
+    vr.textContent=cons.remaining+' kg';
+    vr.style.color='#854f0b';vr.style.fontWeight='700';
+  }
+  if(vc&&vc.textContent!=='—')vc.textContent=cons.consumed+' kg';
+  if(vl&&vl.textContent!=='—')vl.textContent=getLastUse(lot);
+}
+
+function renderRochePanel(){
+  var lot=rpActiveLot;
+  var data=MACHINE_CONSUMPTION[lot];
+  var isQuarantined=(lot==='LOT-2026-006');
+  var isPending=(lot==='LOT-2026-005');
+  var cons=calcConsumedForLot(lot);
+  var pct=data.totalBatch>0?Math.round(cons.consumed/data.totalBatch*100):0;
+  var barColor=pct>80?'#a32d2d':pct>50?'#854f0b':'#185fa5';
+
+  var html='';
+
+  // Status banner
+  if(isQuarantined){
+    html+='<div style="background:#fcebeb;border:1px solid #f7c1c1;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#a32d2d;font-weight:700">⚠ Batch quarantined — DEV-2026-031 open. No further manufacturing use permitted.</div>';
+  } else if(isPending){
+    html+='<div style="background:#faeeda;border:1px solid #fac775;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#854f0b;font-weight:700">⏳ Batch pending QP release — machines not yet scheduled for this lot.</div>';
+  }
+
+  // Summary stats
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px">';
+  html+='<div style="background:#f1efe8;border-radius:8px;padding:9px 8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#185fa5">'+data.totalBatch+' kg</div><div style="font-size:9px;color:#73726c;margin-top:2px">Batch total</div></div>';
+  html+='<div style="background:#f1efe8;border-radius:8px;padding:9px 8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#854f0b">'+cons.consumed+' kg</div><div style="font-size:9px;color:#73726c;margin-top:2px">Consumed</div></div>';
+  html+='<div style="background:#'+(cons.remaining<5?'fcebeb':'eaf3de')+';border-radius:8px;padding:9px 8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#'+(cons.remaining<5?'a32d2d':'3b6d11')+'">'+cons.remaining+' kg</div><div style="font-size:9px;color:#73726c;margin-top:2px">Remaining</div></div>';
+  html+='</div>';
+
+  // Progress bar
+  html+='<div style="margin-bottom:16px">';
+  html+='<div style="display:flex;justify-content:space-between;font-size:10px;color:#73726c;margin-bottom:4px"><span>DS consumed</span><span style="font-weight:700;color:'+barColor+'">'+pct+'%</span></div>';
+  html+='<div style="height:8px;background:#e5e4de;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:4px;transition:width .4s"></div></div>';
+  html+='</div>';
+
+  // Per-machine breakdown
+  html+='<div style="font-size:10px;font-weight:700;color:#73726c;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px">Manufacturing Equipment</div>';
+
+  if(data.machines.length===0){
+    html+='<div style="text-align:center;color:#b4b2a9;font-size:12px;padding:20px">No machines assigned to this lot.</div>';
+  }
+
+  data.machines.forEach(function(mach,mi){
+    var machPct=data.totalBatch>0?Math.round(mach.consumed/data.totalBatch*100):0;
+    html+='<div style="border:1px solid #e5e4de;border-radius:10px;overflow:hidden;margin-bottom:10px">';
+    // Machine header
+    html+='<div style="background:#f8f8f6;padding:9px 12px;border-bottom:1px solid #e5e4de">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    html+='<div>';
+    html+='<div style="font-size:11px;font-weight:700;color:#1a1a18">'+mach.name+'</div>';
+    html+='<div style="font-size:9px;color:#73726c;margin-top:1px">'+mach.id+' · '+mach.type+'</div>';
+    html+='</div>';
+    html+='<div style="font-size:13px;font-weight:700;color:#185fa5">'+mach.consumed+' kg</div>';
+    html+='</div>';
+    // Mini progress
+    html+='<div style="height:4px;background:#e5e4de;border-radius:2px;overflow:hidden;margin-top:7px">';
+    html+='<div style="height:100%;width:'+machPct+'%;background:#185fa5;border-radius:2px"></div>';
+    html+='</div>';
+    html+='</div>';
+
+    // Adjustment controls
+    if(!isQuarantined||mach.consumed>0){
+      html+='<div style="padding:8px 12px;border-bottom:1px solid #f1efe8;display:flex;align-items:center;gap:8px">';
+      html+='<span style="font-size:10px;color:#73726c;flex:1">Adjust consumption (kg):</span>';
+      html+='<button onclick="rpAdjust(\''+lot+'\','+mi+',-5)" style="background:#faeeda;border:1px solid #fac775;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;color:#854f0b;font-weight:700">−5</button>';
+      html+='<button onclick="rpAdjust(\''+lot+'\','+mi+',-1)" style="background:#faeeda;border:1px solid #fac775;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;color:#854f0b;font-weight:700">−1</button>';
+      html+='<button onclick="rpAdjust(\''+lot+'\','+mi+',+1)" style="background:#eaf3de;border:1px solid #c0dd97;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;color:#3b6d11;font-weight:700">+1</button>';
+      html+='<button onclick="rpAdjust(\''+lot+'\','+mi+',+5)" style="background:#eaf3de;border:1px solid #c0dd97;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;color:#3b6d11;font-weight:700">+5</button>';
+      html+='</div>';
+    }
+
+    // Usage log
+    if(mach.log.length>0){
+      html+='<div style="padding:6px 12px 8px">';
+      html+='<div style="font-size:9px;font-weight:700;color:#73726c;letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px">Usage log</div>';
+      // Show last 4 entries, most recent first
+      var entries=mach.log.slice().reverse().slice(0,4);
+      entries.forEach(function(e){
+        var isManual=e.run==='MANUAL';
+        html+='<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #f8f8f6">';
+        html+='<div style="font-size:9px;font-family:monospace;color:#73726c;white-space:nowrap;min-width:108px">'+e.ts+'</div>';
+        html+='<div style="flex:1">';
+        html+='<div style="font-size:10px;color:#1a1a18;font-weight:600">'+e.kg+' kg used</div>';
+        html+='<div style="font-size:9px;color:#73726c">'+e.note+' · <span style="color:#5f5e5a">'+e.op+'</span> · '+e.run+'</div>';
+        html+='</div>';
+        html+='<div style="font-size:9px;padding:2px 5px;border-radius:3px;font-weight:700;white-space:nowrap;'+(isManual?'background:#faeeda;color:#854f0b':'background:#e6f1fb;color:#185fa5')+'">'+e.kg+' kg</div>';
+        html+='</div>';
+      });
+      if(mach.log.length>4){
+        html+='<div style="font-size:9px;color:#b4b2a9;margin-top:4px">+ '+(mach.log.length-4)+' earlier entries</div>';
+      }
+      html+='</div>';
+    } else {
+      html+='<div style="padding:10px 12px;font-size:10px;color:#b4b2a9;text-align:center">No usage recorded yet</div>';
+    }
+    html+='</div>'; // end machine card
+  });
+
+  document.getElementById('rp-body').innerHTML=html;
+}
+
+/* ===== FORECASTING CHART ===== */
+var layers={actual:true,forecast:true,capacity:true,batches:true,alert:true};
+var chartRendered=false;
+function toggleLayer(name){
+  layers[name]=!layers[name];
+  document.getElementById('tog-'+name).classList.toggle('active',layers[name]);
+  if(name==='alert'){document.getElementById('gap-alert').style.display=layers[name]?'block':'none';}
+  renderChart();
+}
+function renderChart(){
+  var svg=document.getElementById('ds-chart');
+  if(!svg)return;
+  var W=600,H=210,mL=44,mR=16,mT=16,mB=28;
+  var cW=W-mL-mR,cH=H-mT-mB;
+  var yMin=40,yMax=120;
+  var labels=['Jan 25','Feb 25','Mar 25','Apr 25','May 25','Jun 25','Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26','Jun 26'];
+  var actual=[52,61,58,65,70,68,75,72,69,78,82,80,null,null,null,null,null,null];
+  var forecast=[null,null,null,null,null,null,null,null,null,null,null,80,85,88,92,96,91,103];
+  var capacity=[85,85,85,85,85,85,85,85,85,85,85,85,90,90,90,90,90,90];
+  var batchIdxs=[2,4,6,8,10,12,14,16];
+  var batchLabels=['003','005','007','009','011','001↗','003↗','005⚠'];
+  var batchColors=['#3b6d11','#3b6d11','#3b6d11','#3b6d11','#3b6d11','#185fa5','#185fa5','#a32d2d'];
+  var n=labels.length;
+  function xp(i){return mL+(i/(n-1))*cW;}
+  function yp(v){return mT+cH-((v-yMin)/(yMax-yMin))*cH;}
+  var html='';
+  // Grid
+  [50,70,90,110].forEach(function(v){
+    var y=yp(v);
+    html+='<line x1="'+mL+'" y1="'+y+'" x2="'+(W-mR)+'" y2="'+y+'" stroke="#f1efe8" stroke-width="1"/>';
+    html+='<text x="'+(mL-5)+'" y="'+(y+4)+'" font-size="9" fill="#b4b2a9" text-anchor="end" font-family="sans-serif">'+v+'</text>';
+  });
+  // X labels (every 3)
+  for(var i=0;i<n;i+=3){html+='<text x="'+xp(i)+'" y="'+(H-4)+'" font-size="8.5" fill="#b4b2a9" text-anchor="middle" font-family="sans-serif">'+labels[i]+'</text>';}
+  // Today line
+  var todayX=xp(11.5);
+  html+='<line x1="'+todayX+'" y1="'+mT+'" x2="'+todayX+'" y2="'+(H-mB)+'" stroke="#d3d1c7" stroke-width="1" stroke-dasharray="3 3"/>';
+  html+='<text x="'+(todayX+3)+'" y="'+(mT+10)+'" font-size="8" fill="#888780" font-family="sans-serif">Today</text>';
+  // Gap alert shading
+  if(layers.alert){
+    var gx1=xp(14),gx2=xp(17);
+    html+='<rect x="'+gx1+'" y="'+mT+'" width="'+(gx2-gx1)+'" height="'+cH+'" fill="#fcebeb" opacity="0.6"/>';
+    html+='<text x="'+((gx1+gx2)/2)+'" y="'+(mT+10)+'" font-size="8" fill="#a32d2d" text-anchor="middle" font-family="sans-serif">⚠ Gap risk</text>';
+  }
+  // Capacity line
+  if(layers.capacity){
+    var capPath='';
+    for(var i=0;i<n;i++){
+      var cx=xp(i),cy=yp(capacity[i]);
+      capPath+=(i===0?'M ':'L ')+cx.toFixed(1)+' '+cy.toFixed(1)+' ';
+    }
+    html+='<path d="'+capPath+'" fill="none" stroke="#d3d1c7" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    html+='<text x="'+(W-mR+2)+'" y="'+yp(90)+'" font-size="8" fill="#888780" font-family="sans-serif" dominant-baseline="middle">Cap.</text>';
+  }
+  // Forecast confidence band
+  if(layers.forecast){
+    var upper=[],lower=[];
+    for(var i=11;i<n;i++){
+      if(forecast[i]!=null){upper.push([xp(i),yp(forecast[i]*1.1)]);lower.push([xp(i),yp(forecast[i]*0.9)]);}
+    }
+    var bandPath='M '+upper[0][0].toFixed(1)+' '+upper[0][1].toFixed(1)+' ';
+    upper.forEach(function(p){bandPath+='L '+p[0].toFixed(1)+' '+p[1].toFixed(1)+' '});
+    for(var i=lower.length-1;i>=0;i--){bandPath+='L '+lower[i][0].toFixed(1)+' '+lower[i][1].toFixed(1)+' ';}
+    bandPath+='Z';
+    html+='<path d="'+bandPath+'" fill="#e6f1fb" opacity="0.5"/>';
+    var fPath='';
+    for(var i=11;i<n;i++){
+      if(forecast[i]!=null){
+        var fx=xp(i),fy=yp(forecast[i]);
+        fPath+=(fPath===''?'M ':'L ')+fx.toFixed(1)+' '+fy.toFixed(1)+' ';
+      }
+    }
+    html+='<path d="'+fPath+'" fill="none" stroke="#378add" stroke-width="2" stroke-dasharray="5 3"/>';
+    for(var i=11;i<n;i++){
+      if(forecast[i]!=null){html+='<circle cx="'+xp(i).toFixed(1)+'" cy="'+yp(forecast[i]).toFixed(1)+'" r="3" fill="#378add" stroke="#fff" stroke-width="1.5"/>';}
+    }
+  }
+  // Actual line
+  if(layers.actual){
+    var aPath='';
+    for(var i=0;i<=11;i++){
+      if(actual[i]!=null){
+        var ax=xp(i),ay=yp(actual[i]);
+        aPath+=(aPath===''?'M ':'L ')+ax.toFixed(1)+' '+ay.toFixed(1)+' ';
+      }
+    }
+    html+='<path d="'+aPath+'" fill="none" stroke="#3b6d11" stroke-width="2.5"/>';
+    for(var i=0;i<=11;i++){
+      if(actual[i]!=null){html+='<circle cx="'+xp(i).toFixed(1)+'" cy="'+yp(actual[i]).toFixed(1)+'" r="3.5" fill="#3b6d11" stroke="#fff" stroke-width="1.5"/>';}
+    }
+  }
+  // Batch markers
+  if(layers.batches){
+    batchIdxs.forEach(function(i,k){
+      var bx=xp(i),by=H-mB;
+      html+='<line x1="'+bx.toFixed(1)+'" y1="'+(by)+'" x2="'+bx.toFixed(1)+'" y2="'+(by-12)+'" stroke="'+batchColors[k]+'" stroke-width="1.5"/>';
+      html+='<circle cx="'+bx.toFixed(1)+'" cy="'+(by)+'" r="3.5" fill="'+batchColors[k]+'" stroke="#fff" stroke-width="1"/>';
+      html+='<text x="'+bx.toFixed(1)+'" y="'+(by-15)+'" font-size="7.5" fill="'+batchColors[k]+'" text-anchor="middle" font-family="sans-serif">'+batchLabels[k]+'</text>';
+    });
+  }
+  // Y axis
+  html+='<line x1="'+mL+'" y1="'+mT+'" x2="'+mL+'" y2="'+(H-mB)+'" stroke="#e5e4de" stroke-width="1"/>';
+  html+='<text x="10" y="'+(mT+cH/2)+'" font-size="8.5" fill="#b4b2a9" text-anchor="middle" font-family="sans-serif" transform="rotate(-90 10 '+(mT+cH/2)+')">kg / month</text>';
+  svg.innerHTML=html;
+  chartRendered=true;
+  if(layers.alert){document.getElementById('gap-alert').style.display='block';}
+  else{document.getElementById('gap-alert').style.display='none';}
+}
+
+/* ===== MULTI-ASSET SELECTOR ===== */
+var ASSETS={
+  'LOT-2026-004':{
+    weight:'Large (50–100 kg)',size:'87.4 kg',potency:'99.8%',yield:'94.2%',qc:'PASS',
+    prod:'2026-03-10',release:'2026-04-18',bestbefore:'2028-04-17',
+    cdmo:'Rosemary AG — Stein site',coa:'CoA-LOT-2026-004-rev1',
+    hash:'SHA-256:3a9f2c1d8e47b6...',status:'Released',
+    dp:{batch:'DP-KAU-2026-041',product:'Basilmol 200mg Film-Coated Tablets',start:'2026-04-19',status:'In-process',units:'218,500 units',patient:'~1,200 patient-months'}
+  },
+  'LOT-2026-005':{
+    weight:'Large (50–100 kg)',size:'90.1 kg',potency:'99.5%',yield:'93.8%',qc:'PASS',
+    prod:'2026-04-02',release:'2026-05-12',bestbefore:'2028-05-11',
+    cdmo:'Rosemary AG — Stein site',coa:'CoA-LOT-2026-005-rev1',
+    hash:'SHA-256:7b2e4f9c1a36d8...',status:'Pending QP',
+    dp:{batch:'DP-KAU-2026-049',product:'Basilmol 200mg Film-Coated Tablets',start:'Scheduled 2026-05-14',status:'Pending DS release',units:'—',patient:'~1,250 patient-months (projected)'}
+  },
+  'LOT-2026-006':{
+    weight:'Medium (25–50 kg)',size:'41.3 kg',potency:'98.9%',yield:'91.4%',qc:'FAIL',
+    prod:'2026-04-14',release:'—',bestbefore:'2028-04-13',
+    cdmo:'Rosemary AG — Stein site',coa:'CoA-LOT-2026-006-draft',
+    hash:'SHA-256:pending...',status:'Under investigation',
+    dp:{batch:'—',product:'Basilmol 200mg Film-Coated Tablets',start:'BLOCKED — OOS',status:'⚠ DS quarantined — DP mfg halted',units:'—',patient:'Impact: ~600 patient-months at risk'}
+  }
+};
+var activeAsset='LOT-2026-004';
+
+function selectAsset(lot){
+  activeAsset=lot;
+  Object.keys(ASSETS).forEach(function(k){
+    document.getElementById('abtn-'+k).classList.toggle('active',k===lot);
+  });
+  document.getElementById('dcc-panel-title').textContent='DS Batch Submodel — Basilmol '+lot;
+  var a=ASSETS[lot];
+  ['f-batch','f-ds','f-weight','f-size','f-potency','f-yield','f-qc','f-release','f-prod','f-expiry','f-cdmo','f-coa','f-hash','f-remaining','f-consumed','f-lastuse','f-dp-batch','f-dp-product','f-dp-start','f-dp-status','f-dp-units','f-dp-patient'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.classList.add('populated');
+  });
+  document.getElementById('v-batch').textContent=lot;document.getElementById('v-batch').className='dcc-val';
+  document.getElementById('v-ds').textContent='Basilmol Drug Substance';document.getElementById('v-ds').className='dcc-val';
+  document.getElementById('v-weight').textContent=a.weight;document.getElementById('v-weight').className='dcc-val';
+  document.getElementById('v-size').textContent=a.size;document.getElementById('v-size').className='dcc-val';
+  document.getElementById('v-potency').textContent=a.potency;document.getElementById('v-potency').className='dcc-val pass';
+  document.getElementById('v-yield').textContent=a.yield;document.getElementById('v-yield').className='dcc-val';
+  var qcEl=document.getElementById('v-qc');qcEl.textContent=a.qc;
+  qcEl.className=a.qc==='PASS'?'dcc-val pass':'dcc-val';qcEl.style.color=a.qc==='FAIL'?'#a32d2d':'';
+  document.getElementById('v-release').textContent=a.release;document.getElementById('v-release').className='dcc-val';
+  document.getElementById('v-prod').textContent=a.prod;document.getElementById('v-prod').className='dcc-val';
+  document.getElementById('v-expiry').textContent=a.bestbefore;document.getElementById('v-expiry').className='dcc-val';
+  document.getElementById('v-cdmo').textContent=a.cdmo;document.getElementById('v-cdmo').className='dcc-val';
+  document.getElementById('v-coa').textContent=a.coa;document.getElementById('v-coa').className='dcc-val';
+  document.getElementById('v-hash').textContent=a.hash;document.getElementById('v-hash').className='dcc-val';
+  // Consumption fields
+  var cons=calcConsumedForLot(lot);
+  var vr=document.getElementById('v-remaining');
+  vr.textContent=cons.remaining+' kg';vr.className='dcc-val';vr.style.color='#854f0b';vr.style.fontWeight='700';
+  document.getElementById('v-consumed').textContent=cons.consumed+' kg';document.getElementById('v-consumed').className='dcc-val';
+  document.getElementById('v-lastuse').textContent=getLastUse(lot);document.getElementById('v-lastuse').className='dcc-val';
+  // DP Batch linkage
+  var dp=a.dp;
+  var isBlocked=dp.status.indexOf('BLOCKED')>-1||dp.status.indexOf('quarantined')>-1;
+  document.getElementById('v-dp-batch').textContent=dp.batch;document.getElementById('v-dp-batch').className='dcc-val';
+  document.getElementById('v-dp-product').textContent=dp.product;document.getElementById('v-dp-product').className='dcc-val';
+  document.getElementById('v-dp-start').textContent=dp.start;document.getElementById('v-dp-start').className='dcc-val';
+  var dpStat=document.getElementById('v-dp-status');dpStat.textContent=dp.status;
+  dpStat.className='dcc-val';dpStat.style.color=isBlocked?'#a32d2d':dp.status==='In-process'?'#3b6d11':'#854f0b';dpStat.style.fontWeight='700';
+  document.getElementById('v-dp-units').textContent=dp.units;document.getElementById('v-dp-units').className='dcc-val';
+  var dpPat=document.getElementById('v-dp-patient');dpPat.textContent=dp.patient;
+  dpPat.className='dcc-val';dpPat.style.color=isBlocked?'#a32d2d':'#534ab7';dpPat.style.fontWeight=isBlocked?'700':'600';
+  var badge=document.getElementById('dcc-badge');
+  if(a.status==='Released'){badge.textContent='Released';badge.className='dcc-badge done';}
+  else if(a.status==='Under investigation'){badge.textContent='Under investigation';badge.className='dcc-badge';badge.style.background='#fcebeb';badge.style.color='#a32d2d';}
+  else{badge.textContent=a.status;badge.className='dcc-badge pending';}
+}
+
+/* ===== IAM ROLES ===== */
+var ROLES={
+  'rosemary-op':{
+    label:'rosemary',
+    desc:'Rosemary Operator: Can write batch data and yield metrics to the AAS portal. Cannot see pricing, strategic forecasts, or other companies\' data. Write access is scoped to their own batch IDs only.',
+    perms:[
+      ['DS Batch CoA','<span class="perm-badge pb-write">Write</span>','Own batches only'],
+      ['Yield & potency data','<span class="perm-badge pb-write">Write</span>','Own batches only'],
+      ['Demand forecast','<span class="perm-badge pb-read">Read</span>','Relevant months only'],
+      ['Batch deviation reports','<span class="perm-badge pb-write">Write</span>','Own batches only'],
+      ['Roche pricing / IP','<span class="perm-badge pb-none">Hidden</span>','Not accessible'],
+      ['Audit log','<span class="perm-badge pb-read">Read</span>','Own actions only']
+    ]
+  },
+  'rosemary-qa':{
+    label:'rosemary',
+    desc:'Rosemary QA: Approves and locks batch CoA data. Can read deviation reports across all Rosemary batches. Cannot see Roche internal formulation, pricing, or downstream DP data.',
+    perms:[
+      ['DS Batch CoA','<span class="perm-badge pb-approve">Approve</span>','All Rosemary batches'],
+      ['Yield & potency data','<span class="perm-badge pb-read">Read</span>','All Rosemary batches'],
+      ['Demand forecast','<span class="perm-badge pb-read">Read</span>','Aggregated only'],
+      ['Batch deviation reports','<span class="perm-badge pb-approve">Approve</span>','All Rosemary batches'],
+      ['Roche pricing / IP','<span class="perm-badge pb-none">Hidden</span>','Not accessible'],
+      ['Audit log','<span class="perm-badge pb-read">Read</span>','Rosemary actions only']
+    ]
+  },
+  'roche-sc':{
+    label:'roche',
+    desc:'Roche Supply Chain: Reads batch status and yield data to update Kaiseraugst production plans. Writes demand forecasts to the AAS portal Forecast Submodel. Cannot approve batch data or access pricing.',
+    perms:[
+      ['DS Batch CoA','<span class="perm-badge pb-read">Read</span>','Released batches only'],
+      ['Yield & potency data','<span class="perm-badge pb-read">Read</span>','Released batches only'],
+      ['Demand forecast','<span class="perm-badge pb-write">Write</span>','Kaiseraugst forecasts'],
+      ['Batch deviation reports','<span class="perm-badge pb-read">Read</span>','Summary only'],
+      ['Roche pricing / IP','<span class="perm-badge pb-none">Hidden</span>','Finance only'],
+      ['Audit log','<span class="perm-badge pb-none">No access</span>','—']
+    ]
+  },
+  'roche-qa':{
+    label:'roche',
+    desc:'Roche QA: Full read access across all batch data for GMP compliance. Reviews deviations. Can trigger holds. Has access to full audit trail for regulatory inspections.',
+    perms:[
+      ['DS Batch CoA','<span class="perm-badge pb-read">Read</span>','All Roche-relevant batches'],
+      ['Yield & potency data','<span class="perm-badge pb-read">Read</span>','All Roche-relevant batches'],
+      ['Demand forecast','<span class="perm-badge pb-read">Read</span>','Read only'],
+      ['Batch deviation reports','<span class="perm-badge pb-read">Read</span>','Full reports'],
+      ['Roche pricing / IP','<span class="perm-badge pb-none">Hidden</span>','Finance only'],
+      ['Audit log','<span class="perm-badge pb-read">Read</span>','Full chain audit']
+    ]
+  },
+  'it-admin':{
+    label:'admin',
+    desc:'IT Admin: No access to business data. Manages ABAC policy rules, user provisioning, and system health. Cannot read batch data, CoAs, or forecasts. Separation of duties enforced.',
+    perms:[
+      ['DS Batch CoA','<span class="perm-badge pb-none">No access</span>','Separation of duties'],
+      ['Yield & potency data','<span class="perm-badge pb-none">No access</span>','Separation of duties'],
+      ['Demand forecast','<span class="perm-badge pb-none">No access</span>','Separation of duties'],
+      ['ABAC policy rules','<span class="perm-badge pb-admin">Admin</span>','Full policy management'],
+      ['User provisioning','<span class="perm-badge pb-admin">Admin</span>','All roles'],
+      ['Audit log (system)','<span class="perm-badge pb-admin">Admin</span>','Security events only']
+    ]
+  }
+};
+var currentRole='rosemary-op';
+function selectRole(r){
+  currentRole=r;
+  Object.keys(ROLES).forEach(function(k){
+    var btn=document.getElementById('rbtn-'+k);
+    btn.classList.toggle('active',k===r);
+    if(k===r)btn.classList.add(ROLES[k].label);
+    else btn.className='role-btn '+ROLES[k].label;
+  });
+  document.getElementById('role-desc').textContent=ROLES[r].desc;
+  var tbody=document.getElementById('perm-tbody');
+  tbody.innerHTML='';
+  ROLES[r].perms.forEach(function(row){
+    tbody.innerHTML+='<tr><td>'+row[0]+'</td><td>'+row[1]+'</td><td style="color:#73726c;font-size:10px">'+row[2]+'</td></tr>';
+  });
+}
+selectRole('rosemary-op');
+
+/* ===== ADAPTIVE PERSONAS ===== */
+function selectPersona(p){
+  ['exec','sc','qa','it'].forEach(function(x){
+    document.getElementById('pbtn-'+x).classList.toggle('active',x===p);
+    document.getElementById('persona-'+x).classList.toggle('active',x===p);
+  });
+}
+
+/* ===== QA REVIEW ===== */
+var qaFilter='all';
+function setQAFilter(f){
+  qaFilter=f;
+  ['all','pass','fail','pending'].forEach(function(x){
+    document.getElementById('qaf-'+x).classList.toggle('active',x===f);
+  });
+  renderQA();
+}
+
+var QA_ASSETS=[
+  {
+    lot:'LOT-2026-004',name:'Basilmol',weight:'Large (50–100 kg)',size:'87.4 kg',
+    potency:'99.8%',yield:'94.2%',qc:'PASS',prod:'2026-03-10',release:'2026-04-18',
+    bestbefore:'2028-04-17',cdmo:'Rosemary AG — Stein site',
+    tests:[
+      {name:'Potency (HPLC)',result:'99.8%',spec:'≥98.0%',status:'PASS'},
+      {name:'Purity (SEC)',result:'99.1%',spec:'≥98.5%',status:'PASS'},
+      {name:'Residual solvents',result:'12 ppm',spec:'≤50 ppm',status:'PASS'},
+      {name:'Water content (KF)',result:'0.4%',spec:'≤0.5%',status:'PASS'},
+      {name:'Endotoxin (LAL)',result:'0.08 EU/mg',spec:'≤0.10 EU/mg',status:'PASS'},
+      {name:'Microbial count',result:'<10 CFU/g',spec:'≤100 CFU/g',status:'PASS'}
+    ],
+    overallStatus:'PASS',reviewer:'Dr. M. Huber',reviewDate:'2026-04-18',notes:'All specifications met. Batch cleared for DP manufacturing at Kaiseraugst.'
+  },
+  {
+    lot:'LOT-2026-005',name:'Basilmol',weight:'Large (50–100 kg)',size:'90.1 kg',
+    potency:'99.5%',yield:'93.8%',qc:'PENDING',prod:'2026-04-02',release:'—',
+    bestbefore:'2028-05-11',cdmo:'Rosemary AG — Stein site',
+    tests:[
+      {name:'Potency (HPLC)',result:'99.5%',spec:'≥98.0%',status:'PASS'},
+      {name:'Purity (SEC)',result:'98.7%',spec:'≥98.5%',status:'PASS'},
+      {name:'Residual solvents',result:'Pending',spec:'≤50 ppm',status:'PENDING'},
+      {name:'Water content (KF)',result:'Pending',spec:'≤0.5%',status:'PENDING'},
+      {name:'Endotoxin (LAL)',result:'Pending',spec:'≤0.10 EU/mg',status:'PENDING'},
+      {name:'Microbial count',result:'Pending',spec:'≤100 CFU/g',status:'PENDING'}
+    ],
+    overallStatus:'PENDING',reviewer:'—',reviewDate:'—',notes:'Awaiting residual solvent and endotoxin results. Expected completion 2026-05-08.'
+  },
+  {
+    lot:'LOT-2026-006',name:'Basilmol',weight:'Medium (25–50 kg)',size:'41.3 kg',
+    potency:'98.9%',yield:'91.4%',qc:'FAIL',prod:'2026-04-14',release:'—',
+    bestbefore:'2028-04-13',cdmo:'Rosemary AG — Stein site',
+    tests:[
+      {name:'Potency (HPLC)',result:'98.9%',spec:'≥98.0%',status:'PASS'},
+      {name:'Purity (SEC)',result:'97.8%',spec:'≥98.5%',status:'FAIL'},
+      {name:'Residual solvents',result:'68 ppm',spec:'≤50 ppm',status:'FAIL'},
+      {name:'Water content (KF)',result:'0.3%',spec:'≤0.5%',status:'PASS'},
+      {name:'Endotoxin (LAL)',result:'0.09 EU/mg',spec:'≤0.10 EU/mg',status:'PASS'},
+      {name:'Microbial count',result:'<10 CFU/g',spec:'≤100 CFU/g',status:'PASS'}
+    ],
+    overallStatus:'FAIL',reviewer:'Dr. A. Keller',reviewDate:'2026-04-17',notes:'OOS: Purity below spec (97.8% vs ≥98.5%) and residual solvents exceeded limit. Deviation report DEV-2026-031 raised. Batch quarantined. Root cause investigation ongoing.'
+  }
+];
+
+function renderQA(){
+  var container=document.getElementById('tab-qa');
+  var filtered=QA_ASSETS.filter(function(a){
+    if(qaFilter==='all')return true;
+    return a.overallStatus===qaFilter.toUpperCase();
+  });
+
+  // Summary stats
+  var pass=QA_ASSETS.filter(function(a){return a.overallStatus==='PASS'}).length;
+  var fail=QA_ASSETS.filter(function(a){return a.overallStatus==='FAIL'}).length;
+  var pend=QA_ASSETS.filter(function(a){return a.overallStatus==='PENDING'}).length;
+
+  var html='<div class="sec-label">Basilmol Asset QA Overview — Rosemary AG</div>';
+
+  // Summary bar
+  html+='<div class="stat-row" style="margin-bottom:12px">';
+  html+='<div class="stat-card"><div class="stat-num success">'+pass+'</div><div class="stat-lbl">Passed</div></div>';
+  html+='<div class="stat-card"><div class="stat-num danger">'+fail+'</div><div class="stat-lbl">Failed</div></div>';
+  html+='<div class="stat-card"><div class="stat-num warn">'+pend+'</div><div class="stat-lbl">Pending</div></div>';
+  html+='</div>';
+
+  // Filter pills
+  html+='<div class="btn-row" style="margin-bottom:14px">';
+  html+='<button class="pill'+(qaFilter==='all'?' active':'')+'" id="qaf-all" onclick="setQAFilter(\'all\')">All ('+QA_ASSETS.length+')</button>';
+  html+='<button class="pill'+(qaFilter==='pass'?' active':'')+'" id="qaf-pass" onclick="setQAFilter(\'pass\')">✓ Pass ('+pass+')</button>';
+  html+='<button class="pill'+(qaFilter==='fail'?' active':'')+'" id="qaf-fail" onclick="setQAFilter(\'fail\')">✗ Fail ('+fail+')</button>';
+  html+='<button class="pill'+(qaFilter==='pending'?' active':'')+'" id="qaf-pending" onclick="setQAFilter(\'pending\')">⏳ Pending ('+pend+')</button>';
+  html+='</div>';
+
+  if(filtered.length===0){
+    html+='<div class="card" style="text-align:center;color:#73726c;font-size:12px;padding:24px">No assets match this filter.</div>';
+  }
+
+  filtered.forEach(function(a){
+    var borderColor=a.overallStatus==='PASS'?'#c0dd97':a.overallStatus==='FAIL'?'#f7c1c1':'#fac775';
+    var bgColor=a.overallStatus==='PASS'?'#eaf3de':a.overallStatus==='FAIL'?'#fcebeb':'#faeeda';
+    var statusColor=a.overallStatus==='PASS'?'#3b6d11':a.overallStatus==='FAIL'?'#a32d2d':'#854f0b';
+    var statusIcon=a.overallStatus==='PASS'?'✓':a.overallStatus==='FAIL'?'✗':'⏳';
+
+    html+='<div style="border:1px solid '+borderColor+';border-radius:10px;overflow:hidden;margin-bottom:12px">';
+    // Asset header
+    html+='<div style="background:'+bgColor+';padding:9px 12px;border-bottom:1px solid '+borderColor+';display:flex;justify-content:space-between;align-items:center">';
+    html+='<div><div style="font-size:12px;font-weight:700;color:#1a1a18">'+a.name+' — '+a.lot+'</div>';
+    html+='<div style="font-size:10px;color:#73726c;margin-top:2px">'+a.cdmo+' · Prod: '+a.prod+'</div></div>';
+    html+='<div style="font-size:13px;font-weight:700;color:'+statusColor+';background:#fff;border:1px solid '+borderColor+';border-radius:6px;padding:4px 10px">'+statusIcon+' '+a.overallStatus+'</div>';
+    html+='</div>';
+
+    // Key metrics row
+    html+='<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #f1efe8">';
+    [{k:'Weight',v:a.weight.split(' ')[0]},{k:'Batch size',v:a.size},{k:'Potency',v:a.potency},{k:'Yield',v:a.yield}].forEach(function(m){
+      html+='<div style="padding:7px 10px;border-right:1px solid #f1efe8"><div style="font-size:9px;color:#73726c">'+m.k+'</div><div style="font-size:11px;font-weight:700;color:#1a1a18;margin-top:2px">'+m.v+'</div></div>';
+    });
+    html+='</div>';
+
+    // Test results table
+    html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px">';
+    html+='<thead><tr style="background:#f8f8f6"><th style="padding:5px 10px;text-align:left;color:#73726c;font-weight:700;font-size:9px;border-bottom:1px solid #e5e4de">Test</th><th style="padding:5px 8px;text-align:left;color:#73726c;font-weight:700;font-size:9px;border-bottom:1px solid #e5e4de">Result</th><th style="padding:5px 8px;text-align:left;color:#73726c;font-weight:700;font-size:9px;border-bottom:1px solid #e5e4de">Spec</th><th style="padding:5px 8px;text-align:center;color:#73726c;font-weight:700;font-size:9px;border-bottom:1px solid #e5e4de">Status</th></tr></thead><tbody>';
+    a.tests.forEach(function(t,i){
+      var tc=t.status==='PASS'?'#3b6d11':t.status==='FAIL'?'#a32d2d':'#854f0b';
+      var tb=t.status==='PASS'?'#eaf3de':t.status==='FAIL'?'#fcebeb':'#faeeda';
+      var ti=t.status==='PASS'?'✓':t.status==='FAIL'?'✗':'—';
+      var rowBg=t.status==='FAIL'?'background:#fff8f8':i%2===0?'':'background:#fafaf8';
+      html+='<tr style="'+rowBg+';border-bottom:1px solid #f1efe8">';
+      html+='<td style="padding:5px 10px;color:#1a1a18">'+t.name+'</td>';
+      html+='<td style="padding:5px 8px;font-family:monospace;color:'+(t.status==='FAIL'?'#a32d2d':'#1a1a18')+'">'+t.result+'</td>';
+      html+='<td style="padding:5px 8px;color:#73726c">'+t.spec+'</td>';
+      html+='<td style="padding:5px 8px;text-align:center"><span style="background:'+tb+';color:'+tc+';font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px">'+ti+' '+t.status+'</span></td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div>';
+
+    // Notes / reviewer
+    html+='<div style="padding:8px 12px;border-top:1px solid #f1efe8;background:#fafaf8">';
+    if(a.overallStatus==='FAIL'){
+      html+='<div style="font-size:10px;color:#a32d2d;font-weight:700;margin-bottom:3px">⚠ QA Notes</div>';
+    } else {
+      html+='<div style="font-size:10px;color:#73726c;font-weight:700;margin-bottom:3px">QA Notes</div>';
+    }
+    html+='<div style="font-size:10px;color:#1a1a18;line-height:1.5;margin-bottom:4px">'+a.notes+'</div>';
+    html+='<div style="font-size:9px;color:#73726c">Reviewed by: <strong>'+a.reviewer+'</strong> · '+a.reviewDate+'</div>';
+    html+='</div>';
+
+    html+='</div>'; // end asset card
+  });
+
+  container.innerHTML=html;
+}
+
+window.addEventListener('load',function(){
+  if(document.getElementById('tab-forecast').classList.contains('active'))renderChart();
+  selectAsset('LOT-2026-004');
+  rpActiveLot='LOT-2026-004';
+});
+</script>
+</body>
+</html>
